@@ -15,8 +15,8 @@ unsigned int dcLoadPort = 18190;  // Replace with your DC Load's UDP port
 IPAddress dcLoadIP(192, 168, 2, 18);  // Replace with your DC Load's IP address
 
 // WiFi credentials
-const char *ssid = "myssid";
-const char *password = "mypass";
+const char *ssid = "---";
+const char *password = "---";
 
 // Web server on port 80
 AsyncWebServer server(80);
@@ -83,9 +83,32 @@ void setup() {
   Serial.println("Connected to WiFi.");
 
   // Web server setup
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String html = "<!DOCTYPE html><html><body>";
+server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String html = "<!DOCTYPE html><html>";
+    
+    html += "<head>";
+    html += "<title>Battery Tester</title>";
+    html += "<script>";
+    // Define function for Enable checkbox
+    html += "function toggleENPin(checkbox) {";
+    html += "  const state = checkbox.checked ? '1' : '0';"; // 1 = HIGH, 0 = LOW
+    html += "  fetch(`/setENPin?state=${state}`, { method: 'GET' })";
+    html += "    .then(response => response.text())";
+    html += "    .then(data => {";
+    html += "      console.log(data);"; // Log response from server
+    html += "      alert(data);"; // Show confirmation to user
+    html += "    })";
+    html += "    .catch(error => console.error('Error:', error));";
+    html += "}";
+    html += "</script>";
+    html += "</head>";
+
+    html += "<body>";
     html += "<h1>Battery Tester</h1>";
+    html += "<label for='en_pin'>Enable Relays:</label>";
+    html += "<input type='checkbox' id='en_pin' onchange='toggleENPin(this)'>";
+    html += "</body>";
+
     html += "<form action='/relay1' method='get'><button type='submit'>Activate Relay 1</button></form>";
     html += "<form action='/relay2' method='get'><button type='submit'>Activate Relay 2</button></form>";
     html += "<form action='/relay3' method='get'><button type='submit'>Activate Relay 3</button></form>";
