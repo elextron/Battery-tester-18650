@@ -7,41 +7,38 @@
 
 
 // Define relay pins and Relay Enable Pin
-#define RELAY1_PIN  14
-#define RELAY2_PIN  12
-#define RELAY3_PIN  13
-#define RELAY4_PIN  15
-#define EN_PIN     2 
+#define RELAY1_PIN 14
+#define RELAY2_PIN 12
+#define RELAY3_PIN 13
+#define RELAY4_PIN 15
+#define EN_PIN 2
 
-#define EEPROM_SIZE 512  // Anpassa storleken vid behov
+#define EEPROM_SIZE 512          // Anpassa storleken vid behov
 #define EEPROM_INIT_FLAG_ADDR 0  // Första adressen i EEPROM
-#define SETTINGS_START_ADDR 1  // Startadress för inställningar
-
+#define SETTINGS_START_ADDR 1    // Startadress för inställningar
 
 WiFiUDP udp;
-unsigned int dcLoadPort = 18190;  // Replace with your DC Load's UDP port
+unsigned int dcLoadPort = 18190;      // Replace with your DC Load's UDP port
 IPAddress dcLoadIP(192, 168, 2, 18);  // Replace with your DC Load's IP address
-
-
 
 // Web server on port 80
 AsyncWebServer server(80);
 
 // Test settings struct
 struct testSettings {
-  int CellCapacity;         // Cella capacity in mAh
-  float currentC;          // Current in C-rating
-  int duration;            // Duration in seconds
-  int sweepCellDelay;      // Delay between cells in sweep mode
-  int testModeDelay;       // Delay between test modes
-  float readVoltOffset;    // Voltage offset adjustment
+  int CellCapacity;      // Cella capacity in mAh
+  float currentC;        // Current in C-rating
+  int duration;          // Duration in seconds
+  int sweepCellDelay;    // Delay between cells in sweep mode
+  int testModeDelay;     // Delay between test modes
+  float readVoltOffset;  // Voltage offset adjustment
 };
 
 // Array to hold settings for each test
 testSettings testSettings[3];
 
 // Tracks the active relay (-1 = none)
-int activeRelay = -1;             
+int activeRelay = -1;
 
 // Function prototypes
 void singleTest(float currentC, int duration);
@@ -58,29 +55,37 @@ void validateSettings();
 void setup() {
   // Serial setup for debugging
   Serial.begin(115200);
-  // Start listening on the local port for incoming UDP packets
-  udp.begin(dcLoadPort); 
-  // Initiera EEPROM 
-   // Initiera EEPROM
+
+  // Initialize EEPROM
   EEPROM.begin(EEPROM_SIZE);
 
-  // Kontrollera om EEPROM är initialiserat
+  // Check if EEPROM is initialized
   if (EEPROM.read(EEPROM_INIT_FLAG_ADDR) != 1) {
-    Serial.println("EEPROM is not initialized. Initializing with default settings...");
-    
-    // Skriv standardinställningar till EEPROM
+    Serial.println("EEPROM not initialized. Writing default settings...");
+
+    // Set default settings
     for (int i = 0; i < 3; i++) {
-      testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};
+      testSettings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };  // Default values
     }
+
     saveSettingsToEEPROM();
 
-    // Skriv flaggan
+    // Mark EEPROM as initialized
     EEPROM.write(EEPROM_INIT_FLAG_ADDR, 1);
     EEPROM.commit();
-  } else {
-    // Ladda inställningar från EEPROM
-    loadSettingsFromEEPROM();
+    //} else {
+    //  Serial.println("EEPROM initialized. Loading settings...");
+    //  loadSettingsFromEEPROM();
+    //}
+
+    // Debugging: Print loaded settings
+    for (int i = 0; i < 3; i++) {
+      Serial.printf("Test %d: Current C: %.2f, Duration: %d, SweepDelay: %d\n",
+                    i + 1, testSettings[i].currentC, testSettings[i].duration, testSettings[i].sweepCellDelay);
+    }
   }
+
+
 
   // Validera inställningar (för säkerhets skull)
   validateSettings();
@@ -99,7 +104,7 @@ void setup() {
   digitalWrite(RELAY2_PIN, HIGH);
   digitalWrite(RELAY3_PIN, HIGH);
   digitalWrite(RELAY4_PIN, HIGH);
-  
+
   // Initialize relays to inactive state (enable active HIGH)
   digitalWrite(EN_PIN, LOW);
 
@@ -117,97 +122,185 @@ void setup() {
   Serial.println("Connected to WiFi.");
 
   // Web server setup
-server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String html = "<!DOCTYPE html><html>";
-    
-    html += "<head>";
-    html += "<title>Battery Tester</title>";
-    html += "<script>";
-    // Define function for Enable checkbox
-    html += "function toggleENPin(checkbox) {";
-    html += "  const state = checkbox.checked ? '1' : '0';"; // 1 = HIGH, 0 = LOW
-    html += "  fetch(`/setENPin?state=${state}`, { method: 'GET' })";
-    html += "    .then(response => response.text())";
-    html += "    .then(data => {";
-    html += "      console.log(data);"; // Log response from server
-    html += "      alert(data);"; // Show confirmation to user
-    html += "    })";
-    html += "    .catch(error => console.error('Error:', error));";
-    html += "}";
-    html += "</script>";
-    html += "</head>";
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String html =
+      "<!DOCTYPE html>"
+      "<html>"
+      "<head>"
+      "<title>Battery Tester</title>"
+      "<meta charset='UTF-8'>"
+      "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+      "<link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap' rel='stylesheet'>"
+      "<style>"
+      "body {"
+      "  font-family: 'Roboto', sans-serif;"
+      "  margin: 0;"
+      "  background-color: #1E1E2F;"
+      "  color: #FFFFFF;"
+      "  display: flex;"
+      "  flex-direction: column;"
+      "  align-items: center;"
+      "  justify-content: center;"
+      "  min-height: 100vh;"
+      "  text-align: center;"
+      "}"
+      "h1 {"
+      "  font-weight: 700;"
+      "  color: #4CAFED;"
+      "}"
+      "form, button {"
+      "  margin: 10px auto;"
+      "}"
+      "button, input[type='text'] {"
+      "  font-size: 1em;"
+      "  padding: 10px 20px;"
+      "  margin: 10px;"
+      "  border-radius: 8px;"
+      "  border: none;"
+      "  cursor: pointer;"
+      "}"
+      "button {"
+      "  background-color: #4CAFED;"
+      "  color: #1E1E2F;"
+      "  transition: background-color 0.3s;"
+      "}"
+      "button:hover {"
+      "  background-color: #307ABF;"
+      "}"
+      "input[type='text'] {"
+      "  width: 70%;"
+      "  background-color: #2E2E3F;"
+      "  color: #FFFFFF;"
+      "  border: 1px solid #4CAFED;"
+      "  border-radius: 8px;"
+      "  padding: 5px 10px;"
+      "}"
+      ".container {"
+      "  width: 90%;"
+      "  max-width: 800px;"
+      "  padding: 20px;"
+      "  background-color: #2A2A3B;"
+      "  border-radius: 10px;"
+      "  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);"
+      "}"
+      ".section {"
+      "  margin-bottom: 30px;"
+      "}"
+      "label {"
+      "  font-weight: 400;"
+      "  display: block;"
+      "  margin-bottom: 5px;"
+      "  color: #CCCCCC;"
+      "}"
+      ".grid {"
+      "  display: grid;"
+      "  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));"
+      "  gap: 15px;"
+      "}"
+      "</style>"
+      "</head>"
+      "<body>"
+      "<div class='container'>"
+      "<h1>Battery Tester</h1>"
+      "<div class='section'>"
+      "<label for='en_pin'>Enable Relays</label>"
+      "<input type='checkbox' id='en_pin' onchange='toggleENPin(this)'>"
+      "</div>"
+      "<div class='section'>"
+      "<h3>Relay Controls</h3>"
+      "<div class='grid'>"
+      "<form action='/relay1' method='get'><button type='submit'>Relay 1</button></form>"
+      "<form action='/relay2' method='get'><button type='submit'>Relay 2</button></form>"
+      "<form action='/relay3' method='get'><button type='submit'>Relay 3</button></form>"
+      "<form action='/relay4' method='get'><button type='submit'>Relay 4</button></form>"
+      "</div>"
+      "</div>"
+      "<div class='section'>"
+      "<h3>Test Settings</h3>"
+      "<div class='grid'>";
 
-    html += "<body>";
-    html += "<h1>Battery Tester</h1>";
-    html += "<label for='en_pin'>Enable Relays:</label>";
-    html += "<input type='checkbox' id='en_pin' onchange='toggleENPin(this)'>";
-    html += "</body>";
-
-    html += "<form action='/relay1' method='get'><button type='submit'>Activate Relay 1</button></form>";
-    html += "<form action='/relay2' method='get'><button type='submit'>Activate Relay 2</button></form>";
-    html += "<form action='/relay3' method='get'><button type='submit'>Activate Relay 3</button></form>";
-    html += "<form action='/relay4' method='get'><button type='submit'>Activate Relay 4</button></form>";
-    html += "<button id='relay1' onclick='toggleRelay(1)'>RE1</button><br>";
-    html += "<button id='inpOn1' onclick='toggleInput(1, \"ON\")'>INP ON</button>";
-    html += "<button id='inpOff1' onclick='toggleInput(1, \"OFF\")'>INP OFF</button><br>";
-    html += "<div id='voltage1'></div> <!-- Voltage display --> ";
-
-
-    // Display current test settings
+    // Test controls
     for (int i = 0; i < 3; i++) {
-      html += "<h3>Test " + String(i + 1) + "</h3>";
-      html += "<form action=\"/saveSettings\" method=\"post\">";
-      html += "Discharge (C): <input type=\"text\" name=\"current" + String(i + 1) + "\" value=\"" + String(testSettings[i].currentC) + "\"><br>";
-      html += "Duration (s): <input type=\"text\" name=\"duration" + String(i + 1) + "\" value=\"" + String(testSettings[i].duration) + "\"><br>";
-      html += "<input type=\"submit\" value=\"Save Test " + String(i + 1) + " Settings\">";
-      html += "</form>";
-      html += "<button onclick=\"fetch('/SingleTest?relay=" + String(i) + "', {method: 'POST'})\">Single Test</button><br>";
+      html +=
+        "<form action='/saveSettings' method='post'>"
+        "Test "
+        + String(i + 1) + "<br>"
+                          "<input type='text' name='current"
+        + String(i + 1) + "' placeholder='Discharge (C)' value='" + String(testSettings[i].currentC) + "'><br>"
+                                                                                                       "<input type='text' name='duration"
+        + String(i + 1) + "' placeholder='Duration (s)' value='" + String(testSettings[i].duration) + "'><br>"
+                                                                                                      "<button type='submit'>Save Test</button>"
+                                                                                                      "</form>"
+                                                                                                      "<button onclick='fetch(\"/SingleTest?relay="
+        + String(i) + "\", {method: \"POST\"})'>Single Test</button>";
     }
 
-    // Display controls for full single and full 
-    html += "<button onclick=\"fetch('/fullSingleTest', {method: 'POST'})\">Full Single Test</button><br>";
-    html += "<button onclick=\"fetch('/fullSweep', {method: 'POST'})\">Full Sweep</button><br>";
+    html +=
+      "</div>"
+      "</div>"
+      "<div class='section'>"
+      "<h3>Global Settings</h3>"
+      "<form action='/saveGlobalSettings' method='post'>"
+      "<input type='text' name='dcLoadIP' placeholder='DC Load IP' value='"
+      + dcLoadIP.toString() + "'><br>"
+                              "<input type='text' name='dcLoadPort' placeholder='DC Load Port' value='"
+      + String(dcLoadPort) + "'><br>"
+                             "<input type='text' name='sweepCellDelay' placeholder='Sweep Cell Delay (ms)' value='"
+      + String(testSettings[0].sweepCellDelay) + "'><br>"
+                                                 "<input type='text' name='testModeDelay' placeholder='Test Mode Delay (ms)' value='"
+      + String(testSettings[0].testModeDelay) + "'><br>"
+                                                "<button type='submit'>Save Global Settings</button>"
+                                                "</form>"
+                                                "</div>"
+                                                "</div>"
+                                                "</body>"
+                                                "</html>";
 
-    // Editable global settings
-    html += "<h3>Global Settings</h3>";
-    html += "<form action=\"/saveGlobalSettings\" method=\"post\">";
-    html += "DC Load IP: <input type=\"text\" name=\"dcLoadIP\" value=\"" + dcLoadIP.toString() + "\"><br>";
-    html += "DC Load Port: <input type=\"text\" name=\"dcLoadPort\" value=\"" + String(dcLoadPort) + "\"><br>";
-    html += "Cell Capacity (mAh): <input type=\"text\" name=\"CellCapacity\" value=\"" + String(testSettings[0].CellCapacity) + "\"><br>";
-    html += "Sweep Cell Delay (ms): <input type=\"text\" name=\"sweepCellDelay\" value=\"" + String(testSettings[0].sweepCellDelay) + "\"><br>";
-    html += "Test Mode Delay (ms): <input type=\"text\" name=\"testModeDelay\" value=\"" + String(testSettings[0].testModeDelay) + "\"><br>";
-    html += "Voltage Offset (V): <input type=\"text\" name=\"readVoltOffset\" value=\"" + String(testSettings[0].readVoltOffset) + "\"><br>";
-    html += "<input type=\"submit\" value=\"Save Global Settings\">";
-    html += "</form>";
-
-    html += "</body></html>";
     request->send(200, "text/html", html);
   });
 
-  server.on("/setENPin", HTTP_GET, [](AsyncWebServerRequest *request) {
-      // Kontrollera om parameter "state" finns
-      if (request->hasParam("state")) {
-          String state = request->getParam("state")->value();
 
-          if (state == "1") {
-              digitalWrite(EN_PIN, HIGH); // Aktivera FET
-              Serial.println("EN_PIN set to HIGH (Relays powered ON)");
-              request->send(200, "text/plain", "Relays are now enabled.");
-          } else if (state == "0") {
-              digitalWrite(EN_PIN, LOW); // Avaktivera FET
-              Serial.println("EN_PIN set to LOW (Relays powered OFF)");
-              request->send(200, "text/plain", "Relays are now disabled.");
-          } else {
-              request->send(400, "text/plain", "Invalid state value.");
-          }
+
+
+
+  server.on("/setENPin", HTTP_GET, [](AsyncWebServerRequest *request) {
+    // Kontrollera om parameter "state" finns
+    if (request->hasParam("state")) {
+      String state = request->getParam("state")->value();
+
+      if (state == "1") {
+        digitalWrite(EN_PIN, HIGH);  // Aktivera FET
+        Serial.println("EN_PIN set to HIGH (Relays powered ON)");
+        request->send(200, "text/plain", "Relays are now enabled.");
+      } else if (state == "0") {
+        digitalWrite(EN_PIN, LOW);  // Avaktivera FET
+        Serial.println("EN_PIN set to LOW (Relays powered OFF)");
+        request->send(200, "text/plain", "Relays are now disabled.");
       } else {
-          request->send(400, "text/plain", "Missing state parameter.");
+        request->send(400, "text/plain", "Invalid state value.");
       }
-    });  
+    } else {
+      request->send(400, "text/plain", "Missing state parameter.");
+    }
+  });
+
+  server.on("/toggleEN", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("state")) {
+      String state = request->getParam("state")->value();
+      if (state == "ON") {
+        digitalWrite(EN_PIN, HIGH);  // Turn ON
+      } else {
+        digitalWrite(EN_PIN, LOW);  // Turn OFF
+      }
+      request->send(200, "text/plain", "EN_PIN is " + state);
+    } else {
+      request->send(400, "text/plain", "Missing parameter 'state'");
+    }
+  });
 
 
   // Control relay 1
-  server.on("/relay1", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/relay1", HTTP_GET, [](AsyncWebServerRequest *request) {
     ActivateRelay(1);
     activeRelay = 1;
     Serial.println("Relay #1 Active");
@@ -215,7 +308,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
   // Control relay 2
-  server.on("/relay2", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/relay2", HTTP_GET, [](AsyncWebServerRequest *request) {
     ActivateRelay(2);
     activeRelay = 2;
     Serial.println("Relay #2 Active");
@@ -223,7 +316,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
   // Control relay 3
-  server.on("/relay3", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/relay3", HTTP_GET, [](AsyncWebServerRequest *request) {
     ActivateRelay(3);
     activeRelay = 3;
     Serial.println("Relay #3 Active");
@@ -231,7 +324,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
   // Control relay 4
-  server.on("/relay4", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/relay4", HTTP_GET, [](AsyncWebServerRequest *request) {
     ActivateRelay(4);
     activeRelay = 4;
     Serial.println("Relay #4 Active");
@@ -239,10 +332,10 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
   // Endpoint to get the active relay status
-  server.on("/activeRelay", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/activeRelay", HTTP_GET, [](AsyncWebServerRequest *request) {
     String status = "Active Relay: " + String(activeRelay);
     request->send(200, "text/plain", status);
-  }); 
+  });
 
   // Endpoint to save test settings
   server.on("/saveSettings", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -269,7 +362,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Settings saved");
   });
 
-// Endpoint to save global settings
+  // Endpoint to save global settings
   server.on("/saveGlobalSettings", HTTP_POST, [](AsyncWebServerRequest *request) {
     dcLoadIP.fromString(request->getParam("dcLoadIP", true)->value());  // Correct IP assignment
     dcLoadPort = request->getParam("dcLoadPort", true)->value().toInt();
@@ -283,7 +376,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
 
-  // Endpoint to run Single test 
+  // Endpoint to run Single test
   server.on("/SingleTest", HTTP_POST, [](AsyncWebServerRequest *request) {
     // Använd standardvärden från TestSettings
     float currentC = testSettings[0].currentC;
@@ -291,17 +384,17 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 
     // Kontrollera om parametrar finns och skriv över enbart de som är angivna
     if (request->hasParam("currentC", true)) {
-        currentC = request->getParam("currentC", true)->value().toFloat();
+      currentC = request->getParam("currentC", true)->value().toFloat();
     }
     if (request->hasParam("duration", true)) {
-        duration = request->getParam("duration", true)->value().toInt();
+      duration = request->getParam("duration", true)->value().toInt();
     }
 
     // Validera värden
     if (currentC <= 0 || duration <= 0) {
-        Serial.println("Invalid current or duration values");
-        request->send(400, "text/plain", "Invalid current or duration values.");
-        return;
+      Serial.println("Invalid current or duration values");
+      request->send(400, "text/plain", "Invalid current or duration values.");
+      return;
     }
 
     // Kör testet
@@ -330,10 +423,23 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Full Sweep initiated");
   });
 
-  server.on("/voltage/1", HTTP_GET, [](AsyncWebServerRequest *request){
-      String voltage = getVoltageResponse();
-      request->send(200, "text/plain", voltage); // Send voltage back to the web interface
+  server.on("/voltage/1", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String voltage = getVoltageResponse();
+    request->send(200, "text/plain", voltage);  // Send voltage back to the web interface
   });
+
+  server.on("/setParams", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("param1") && request->hasParam("param2") && request->hasParam("param3")) {
+      String param1 = request->getParam("param1")->value();
+      String param2 = request->getParam("param2")->value();
+      String param3 = request->getParam("param3")->value();
+      // Process the parameters (e.g., save to variables or EEPROM)
+      request->send(200, "text/plain", "Parameters updated!");
+    } else {
+      request->send(400, "text/plain", "Missing parameters");
+    }
+  });
+
 
   server.begin();
   Serial.println("Server started.");
@@ -341,12 +447,12 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 
 void loop() {
   // Placeholder for main logic
- //for (size_t i = 0; i < request->params(); i++) {  // Corrected loop comparison
+  //for (size_t i = 0; i < request->params(); i++) {  // Corrected loop comparison
 
   // rest of the loop code
   //sendCommandToDCLoad(":VOLT 5V");  // Example command to set voltage
- // sendCommandToDCLoad(":CURR?");
-  
+  // sendCommandToDCLoad(":CURR?");
+
   //delay(100);  // Wait for the DC Load to process the command
 
   String response = receiveResponse();
@@ -380,54 +486,53 @@ void ActivateRelay(int relay) {
     // Annars logga ett meddelande
     Serial.println("Cannot activate relay: EN_PIN is LOW (Relays are disabled).");
   }
-  
 }
 
 // Executes a single test for the given relay
 void SingleTest(float currentC, int duration) {
-    // 1. Set the DC load to the correct current (based on currentC from the global struct)
-    float current = (testSettings[0].currentC * 3200) / 1000;  // Convert C value to actual current in A (3200mAh cells)
-    Serial.println(":IMP ON");
-    // Command to set the current on the DC load (this will depend on your DC Load library/protocol)
-    // dcLoad.setCurrent(current);  // Replace with your DC load control code
+  // 1. Set the DC load to the correct current (based on currentC from the global struct)
+  float current = (testSettings[0].currentC * 3200) / 1000;  // Convert C value to actual current in A (3200mAh cells)
+  Serial.println(":IMP ON");
+  // Command to set the current on the DC load (this will depend on your DC Load library/protocol)
+  // dcLoad.setCurrent(current);  // Replace with your DC load control code
 
-    // 2. Start a timer for the specified duration
-    unsigned long startTime = millis();
-    unsigned long endTimeSec = testSettings[0].duration * 1000;   // Convert seconds to milliseconds
-    unsigned long endTime = startTime + endTimeSec; // Set End time
+  // 2. Start a timer for the specified duration
+  unsigned long startTime = millis();
+  unsigned long endTimeSec = testSettings[0].duration * 1000;  // Convert seconds to milliseconds
+  unsigned long endTime = startTime + endTimeSec;              // Set End time
 
-    // 3. Wait until the timer is done
-    while (millis() < endTime) {
-        // Check if time is near to the offset time for voltage reading
-        if (millis() >= (endTime - testSettings[0].readVoltOffset)) {
-            // Read voltage using the DC Load or your appropriate method
-            //float voltage = readVoltageWithOffset();  // Use the adjusted voltage reading function
-            Serial.print("Voltage at offset time: ");
-            //Serial.println(voltage);
+  // 3. Wait until the timer is done
+  while (millis() < endTime) {
+    // Check if time is near to the offset time for voltage reading
+    if (millis() >= (endTime - testSettings[0].readVoltOffset)) {
+      // Read voltage using the DC Load or your appropriate method
+      //float voltage = readVoltageWithOffset();  // Use the adjusted voltage reading function
+      Serial.print("Voltage at offset time: ");
+      //Serial.println(voltage);
 
-            // You can store this voltage for later use, or send it to the web interface
-            // sendVoltageToWeb(voltage);  // Example of sending to web
-        }
+      // You can store this voltage for later use, or send it to the web interface
+      // sendVoltageToWeb(voltage);  // Example of sending to web
     }
+  }
 
-    // 4. After the test is complete, turn off the DC load
-    Serial.println(":IMP OFF");
-    // dcLoad.turnOff();  // Replace with actual command to turn off DC load
+  // 4. After the test is complete, turn off the DC load
+  Serial.println(":IMP OFF");
+  // dcLoad.turnOff();  // Replace with actual command to turn off DC load
 
-    // 5. Output the results to the terminal
-    Serial.print("Single Test completed - Current: ");
-    Serial.print(current);
-    Serial.print(" A, Duration: ");
-    Serial.print(testSettings[0].duration);
-    Serial.print(" seconds, End Voltage: ");
-    //Serial.println(voltage);  // Assuming you stored the voltage in a variable
+  // 5. Output the results to the terminal
+  Serial.print("Single Test completed - Current: ");
+  Serial.print(current);
+  Serial.print(" A, Duration: ");
+  Serial.print(testSettings[0].duration);
+  Serial.print(" seconds, End Voltage: ");
+  //Serial.println(voltage);  // Assuming you stored the voltage in a variable
 }
 
-    // 9. Present the result on the web interface
-    // Assuming you have a function to update the web page with the results
-    //updateWebPage(current, duration, finalVoltage);
+// 9. Present the result on the web interface
+// Assuming you have a function to update the web page with the results
+//updateWebPage(current, duration, finalVoltage);
 
-void FullSingleTest(int Re){
+void FullSingleTest(int Re) {
   Serial.print("Running Test 1 on Cell #");
   Serial.println(activeRelay);
 }
@@ -457,8 +562,8 @@ String receiveResponse() {
   int packetSize = udp.parsePacket();
   if (packetSize) {
     byte buffer[packetSize];
-    udp.read(buffer, packetSize);  // Read the incoming packet into the buffer
-    String response = String((char*)buffer);  // Convert the buffer to a string
+    udp.read(buffer, packetSize);              // Read the incoming packet into the buffer
+    String response = String((char *)buffer);  // Convert the buffer to a string
     Serial.println("Response received: " + response);
     return response;
   }
@@ -466,23 +571,23 @@ String receiveResponse() {
 }
 
 void getVoltageFromDCLoad() {
-    udp.beginPacket(dcLoadIP, dcLoadPort);
-    udp.print(":VOLT?");
-    udp.endPacket();
+  udp.beginPacket(dcLoadIP, dcLoadPort);
+  udp.print(":VOLT?");
+  udp.endPacket();
 }
 
 String getVoltageResponse() {
-    udp.parsePacket();
-    char buffer[128];
-    udp.read(buffer, sizeof(buffer));
-    return String(buffer);
+  udp.parsePacket();
+  char buffer[128];
+  udp.read(buffer, sizeof(buffer));
+  return String(buffer);
 }
 
 void saveSettingsToEEPROM() {
   int addr = SETTINGS_START_ADDR;
   for (int i = 0; i < 3; i++) {
     EEPROM.put(addr, testSettings[i]);  // Spara varje `testSettings`-struktur
-    addr += sizeof(testSettings[i]);   // Uppdatera adressen
+    addr += sizeof(testSettings[i]);    // Uppdatera adressen
   }
   EEPROM.commit();  // Spara till flash
   Serial.println("Settings saved to EEPROM");
@@ -492,7 +597,7 @@ void loadSettingsFromEEPROM() {
   int addr = SETTINGS_START_ADDR;
   for (int i = 0; i < 3; i++) {
     EEPROM.get(addr, testSettings[i]);  // Läs varje `testSettings`-struktur
-    addr += sizeof(testSettings[i]);   // Uppdatera adressen
+    addr += sizeof(testSettings[i]);    // Uppdatera adressen
   }
   Serial.println("Settings loaded from EEPROM");
 }
@@ -500,11 +605,8 @@ void loadSettingsFromEEPROM() {
 void validateSettings() {
   for (int i = 0; i < 3; i++) {
     if (testSettings[i].currentC <= 0 || testSettings[i].duration <= 0) {
-      testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};  // Återställ till standard
+      testSettings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };  // Återställ till standard
       Serial.println("Invalid settings detected. Resetting to defaults.");
     }
   }
 }
-
-
-
