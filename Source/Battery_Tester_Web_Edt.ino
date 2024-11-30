@@ -2,6 +2,8 @@
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
+#include <EEPROM.h>
+
 
 // Define relay pins and Relay Enable Pin
 #define RELAY1_PIN  14
@@ -9,6 +11,11 @@
 #define RELAY3_PIN  13
 #define RELAY4_PIN  15
 #define EN_PIN     2 
+
+#define EEPROM_SIZE 512  // Anpassa storleken vid behov
+#define EEPROM_INIT_FLAG_ADDR 0  // Första adressen i EEPROM
+#define SETTINGS_START_ADDR 1  // Startadress för inställningar
+
 
 WiFiUDP udp;
 unsigned int dcLoadPort = 18190;  // Replace with your DC Load's UDP port
@@ -45,11 +52,39 @@ String getVoltageResponse();
 void getVoltageFromDCLoad();
 void sendCommandToDCLoad(const String &command, float value = 0.0);  // Use String instead of void
 void ActivateRelay(int relay);
+void saveSettingsToEEPROM();
+void loadSettingsFromEEPROM();
+void validateSettings();
 
 void setup() {
   // Serial setup for debugging
   Serial.begin(115200);
-  udp.begin(dcLoadPort);  // Start listening on the local port for incoming UDP packets
+  // Start listening on the local port for incoming UDP packets
+  udp.begin(dcLoadPort); 
+  // Initiera EEPROM 
+   // Initiera EEPROM
+  EEPROM.begin(EEPROM_SIZE);
+
+  // Kontrollera om EEPROM är initialiserat
+  if (EEPROM.read(EEPROM_INIT_FLAG_ADDR) != 1) {
+    Serial.println("EEPROM is not initialized. Initializing with default settings...");
+    
+    // Skriv standardinställningar till EEPROM
+    for (int i = 0; i < 3; i++) {
+      testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};
+    }
+    saveSettingsToEEPROM();
+
+    // Skriv flaggan
+    EEPROM.write(EEPROM_INIT_FLAG_ADDR, 1);
+    EEPROM.commit();
+  } else {
+    // Ladda inställningar från EEPROM
+    loadSettingsFromEEPROM();
+  }
+
+  // Validera inställningar (för säkerhets skull)
+  validateSettings();
   
   // Set relay pins as outputs
   pinMode(RELAY1_PIN, OUTPUT);
@@ -70,9 +105,9 @@ void setup() {
   digitalWrite(EN_PIN, LOW);
 
   // Initialize test settings
-  for (int i = 0; i < 3; i++) {
-    testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};
-  }
+  //for (int i = 0; i < 3; i++) {
+  //  testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};
+  //}
 
   // Connect to WiFi
   WiFi.begin(ssid, password);
@@ -171,6 +206,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       }
     });  
 
+
   // Control relay 1
   server.on("/relay1", HTTP_GET, [](AsyncWebServerRequest *request){
     ActivateRelay(1);
@@ -242,6 +278,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     testSettings[0].sweepCellDelay = request->getParam("sweepCellDelay", true)->value().toInt();
     testSettings[0].testModeDelay = request->getParam("testModeDelay", true)->value().toInt();
     testSettings[0].readVoltOffset = request->getParam("readVoltOffset", true)->value().toFloat();
+    saveSettingsToEEPROM();  // Spara direkt till EEPROM
     Serial.println("Global Settings Saved");
     request->send(200, "text/plain", "Global settings saved");
   });
@@ -321,6 +358,7 @@ void loop() {
   //Serial.println(ESP.getFreeHeap());
   //delay(100);  // Adjust the delay as needed
 }
+
 
 
 void ActivateRelay(int relay) {
@@ -441,8 +479,33 @@ String getVoltageResponse() {
     return String(buffer);
 }
 
+void saveSettingsToEEPROM() {
+  int addr = SETTINGS_START_ADDR;
+  for (int i = 0; i < 3; i++) {
+    EEPROM.put(addr, testSettings[i]);  // Spara varje `testSettings`-struktur
+    addr += sizeof(testSettings[i]);   // Uppdatera adressen
+  }
+  EEPROM.commit();  // Spara till flash
+  Serial.println("Settings saved to EEPROM");
+}
 
+void loadSettingsFromEEPROM() {
+  int addr = SETTINGS_START_ADDR;
+  for (int i = 0; i < 3; i++) {
+    EEPROM.get(addr, testSettings[i]);  // Läs varje `testSettings`-struktur
+    addr += sizeof(testSettings[i]);   // Uppdatera adressen
+  }
+  Serial.println("Settings loaded from EEPROM");
+}
 
+void validateSettings() {
+  for (int i = 0; i < 3; i++) {
+    if (testSettings[i].currentC <= 0 || testSettings[i].duration <= 0) {
+      testSettings[i] = {3200, 0.2, 10, 1000, 500, 0.0};  // Återställ till standard
+      Serial.println("Invalid settings detected. Resetting to defaults.");
+    }
+  }
+}
 
 
 
