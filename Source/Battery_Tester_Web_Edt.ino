@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
+#include "secrets.h"
 
 
 // Define relay pins and Relay Enable Pin
@@ -21,9 +22,7 @@ WiFiUDP udp;
 unsigned int dcLoadPort = 18190;  // Replace with your DC Load's UDP port
 IPAddress dcLoadIP(192, 168, 2, 18);  // Replace with your DC Load's IP address
 
-// WiFi credentials
-const char *ssid = "---";
-const char *password = "---";
+
 
 // Web server on port 80
 AsyncWebServer server(80);
@@ -85,7 +84,7 @@ void setup() {
 
   // Validera inställningar (för säkerhets skull)
   validateSettings();
-  
+
   // Set relay pins as outputs
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
