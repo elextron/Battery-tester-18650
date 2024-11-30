@@ -37,6 +37,15 @@ struct testSettings {
 // Array to hold settings for each test
 testSettings testSettings[3];
 
+// Array to hold battery voltages for 3 diffrent senarios.
+float Voltages[4][3] = {
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0}
+};
+
+
 // Tracks the active relay (-1 = none)
 int activeRelay = -1;
 
@@ -168,7 +177,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         "  background-color: #307ABF;"
         "}"
         "input[type='text'] {"
-        "  width: 70%;"
+        "  width: 100%;"
         "  background-color: #2E2E3F;"
         "  color: #FFFFFF;"
         "  border: 1px solid #4CAFED;"
@@ -177,7 +186,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         "}"
         ".container {"
         "  width: 90%;"
-        "  max-width: 800px;"
+        "  max-width: 1000px;"
         "  padding: 20px;"
         "  background-color: #2A2A3B;"
         "  border-radius: 10px;"
@@ -186,18 +195,17 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         ".section {"
         "  margin-bottom: 30px;"
         "}"
-        "label {"
-        "  font-weight: 400;"
-        "  display: block;"
-        "  margin-bottom: 5px;"
-        "  color: #CCCCCC;"
-        "}"
         ".grid {"
         "  display: grid;"
-        "  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));"
-        "  gap: 15px;"
+        "  grid-template-columns: repeat(4, 1fr);"
+        "  gap: 20px;"
         "}"
-          ".switch {"
+        ".small-grid {"
+        "  display: grid;"
+        "  grid-template-columns: 1fr 1fr;"
+        "  gap: 10px;"
+        "}"
+        ".switch {"
         "  position: relative;"
         "  display: inline-block;"
         "  width: 60px;"
@@ -239,7 +247,6 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         "</style>"
         "<script>"
         "function toggleENPin(element) {"
-        "  console.log(element);"
         "  let state = element.checked ? 'ON' : 'OFF';"
         "  fetch(`/toggleEN?state=${state}`)"
         "    .then(response => response.text())"
@@ -250,6 +257,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         "<body>"
         "<div class='container'>"
         "<h1>18650 Battery Tester</h1>"
+        
         "<div class='section'>"
         "<h2>Enable Pin</h2>"
         "<label class='switch'>"
@@ -257,50 +265,74 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         "  <span class='slider'></span>"
         "</label>"
         "</div>"
-        "<div class='section'>"
-        "<h3>Relay Controls</h3>"
-        "<div class='grid'>"
-        "<form action='/relay1' method='get'><button type='submit'>Relay 1</button></form>"
-        "<form action='/relay2' method='get'><button type='submit'>Relay 2</button></form>"
-        "<form action='/relay3' method='get'><button type='submit'>Relay 3</button></form>"
-        "<form action='/relay4' method='get'><button type='submit'>Relay 4</button></form>"
-        "</div>"
-        "</div>"
-        "<div class='section'>"
-        "<h3>Test Settings</h3>"
+
         "<div class='grid'>";
         
-        // Test controls
-        for (int i = 0; i < 3; i++) {
-            html += 
-            "<form action='/saveSettings' method='post'>"
-            "Test " + String(i + 1) + "<br>"
-            "<input type='text' name='current" + String(i + 1) + "' placeholder='Discharge (C)' value='" + String(testSettings[i].currentC) + "'><br>"
-            "<input type='text' name='duration" + String(i + 1) + "' placeholder='Duration (s)' value='" + String(testSettings[i].duration) + "'><br>"
-            "<button type='submit'>Save Test</button>"
-            "</form>"
-            "<button onclick='fetch(\"/SingleTest?relay=" + String(i) + "\", {method: \"POST\"})'>Single Test</button>";
+        // Relay and voltage section for each of the 4 cells
+        for (int relay = 0; relay < 4; relay++) {
+            html += "<div style='text-align:center;'>";
+            html += "<h4>Relay " + String(relay + 1) + "</h4>";
+            
+            // Relay button
+            html += "<button onclick='fetch(\"/relay" + String(relay + 1) + "\", {method: \"POST\"})'>Activate Relay</button>";
+            
+            // Cell parameters: Duration and C with description
+            html += "<div class='small-grid'>";
+            html += "<div><strong>Duration</strong><br><input type='text' name='duration" + String(relay + 1) + "' placeholder='Duration (s)' value='" + String(testSettings[relay].duration) + "'></div>";
+            html += "<div><strong>Discharge (C)</strong><br><input type='text' name='current" + String(relay + 1) + "' placeholder='Discharge (C)' value='" + String(testSettings[relay].currentC) + "'></div>";
+            html += "</div>";
+            
+            // Voltages from Test1-3 for each cell (horizontal row)
+            html += "<div style='display: flex; justify-content: space-between;'>";
+            for (int setting = 0; setting < 3; setting++) {
+                html += "<div style='text-align:center;'><strong>Volt" + String(setting + 1) + "</strong><br>" + String(Voltages[relay][setting], 2) + " V</div>";
+            }
+            html += "</div>";
+
+            // Single Test button for each cell
+            html += "<button onclick='fetch(\"/SingleTest" + String(relay + 1) + "\", {method: \"POST\"})'>Single Test</button>";
+            html += "</div>";
         }
 
-        html += 
-        "</div>"
-        "</div>"
-        "<div class='section'>"
-        "<h3>Global Settings</h3>"
-        "<form action='/saveGlobalSettings' method='post'>"
-        "<input type='text' name='dcLoadIP' placeholder='DC Load IP' value='" + dcLoadIP.toString() + "'><br>"
-        "<input type='text' name='dcLoadPort' placeholder='DC Load Port' value='" + String(dcLoadPort) + "'><br>"
-        "<input type='text' name='sweepCellDelay' placeholder='Sweep Cell Delay (ms)' value='" + String(testSettings[0].sweepCellDelay) + "'><br>"
-        "<input type='text' name='testModeDelay' placeholder='Test Mode Delay (ms)' value='" + String(testSettings[0].testModeDelay) + "'><br>"
-        "<button type='submit'>Save Global Settings</button>"
-        "</form>"
-        "</div>"
-        "</div>"
-        "</body>"
-        "</html>";
-        
+        html += "</div>"; // Close grid
+
+        // Full Single Test and Full Sweep buttons
+        html += "<div style='text-align:center; margin-top:20px;'>"
+                "<button onclick='fetch(\"/FullSingleTest\", {method: \"POST\"})'>Full Single Test</button>"
+                "<button onclick='fetch(\"/FullSweep\", {method: \"POST\"})'>Full Sweep</button>"
+                "</div>";
+
+        // Global Settings Description and Inputs
+        html += "<div class='section'>"
+                "<h3>Global Settings</h3>"
+                "<p>Configure global parameters for the tests:</p>"
+                "<ul style='text-align:left;'>"
+                "<li><strong>DC Load IP:</strong> Enter the IP address of the DC Load device.</li>"
+                "<li><strong>DC Load Port:</strong> Set the port number for communication with the DC Load.</li>"
+                "<li><strong>Sweep Cell Delay:</strong> Set the delay (in milliseconds) between testing each cell during a sweep.</li>"
+                "<li><strong>Test Mode Delay:</strong> Configure the delay (in milliseconds) between each test mode.</li>"
+                "</ul>"
+                "<div class='small-grid'>"
+                "<input type='text' name='dcLoadIP' placeholder='DC Load IP' value='" + dcLoadIP.toString() + "'>"
+                "<input type='text' name='dcLoadPort' placeholder='DC Load Port' value='" + String(dcLoadPort) + "'>"
+                "</div>"
+                "<div class='small-grid'>"
+                "<input type='text' name='sweepCellDelay' placeholder='Sweep Cell Delay (ms)' value='" + String(testSettings[0].sweepCellDelay) + "'>"
+                "<input type='text' name='testModeDelay' placeholder='Test Mode Delay (ms)' value='" + String(testSettings[0].testModeDelay) + "'>"
+                "</div>"
+                "</div>";
+
+        html += "</div></body></html>";
+
     request->send(200, "text/html", html);
 });
+
+
+
+
+
+
+
 
 
 
@@ -539,13 +571,13 @@ void SingleTest(float currentC, int duration) {
 
   // 2. Start a timer for the specified duration
   unsigned long startTime = millis();
-  unsigned long endTimeSec = testSettings[0].duration * 1000;  // Convert seconds to milliseconds
+  unsigned long endTimeSec = testSettings[activeRelay].duration * 1000;  // Convert seconds to milliseconds
   unsigned long endTime = startTime + endTimeSec;              // Set End time
 
   // 3. Wait until the timer is done
   while (millis() < endTime) {
     // Check if time is near to the offset time for voltage reading
-    if (millis() >= (endTime - testSettings[0].readVoltOffset)) {
+    if (millis() >= (endTime - testSettings[activeRelay].readVoltOffset)) {
       // Read voltage using the DC Load or your appropriate method
       //float voltage = readVoltageWithOffset();  // Use the adjusted voltage reading function
       Serial.print("Voltage at offset time: ");
@@ -564,7 +596,7 @@ void SingleTest(float currentC, int duration) {
   Serial.print("Single Test completed - Current: ");
   Serial.print(current);
   Serial.print(" A, Duration: ");
-  Serial.print(testSettings[0].duration);
+  Serial.print(testSettings[activeRelay].duration);
   Serial.print(" seconds, End Voltage: ");
   //Serial.println(voltage);  // Assuming you stored the voltage in a variable
 }
