@@ -27,11 +27,21 @@
             padding: 20px;
             width: 90%;
         }
-        .cell, .card {
+        .card {
             background-color: #2E2E3F;
             border: 1px solid #5b5b99;
             border-radius: 5px;
             padding: 15px;
+        }
+        .cell {
+            background-color: #2E2E3F;
+            border: 1px solid #5b5b99;
+            border-radius: 5px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
         }
         button {
             background-color: #4CAFED;
@@ -42,7 +52,7 @@
             padding: 10px;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #4b58c7;
         }
         input[type="text"] {
             background-color: #2E2E3F;
@@ -54,7 +64,7 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
 
@@ -65,6 +75,36 @@
         .slider-container label {
             color: #FFFFFF;
             font-size: 1.2em;
+        }
+        .activate-relay {
+            background-color: #4CAFED;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 20px;
+            font-size: 18px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        button {
+            background-color: #4CAFED;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #277db3;
+        }
+
+        .single-test {
+            margin-top: 10px;
         }
     </style>
     <script>
@@ -97,17 +137,24 @@
 
         function renderVoltageCards() {
             const grid = document.getElementById("grid");
-            grid.innerHTML = "";
-            Voltages.forEach((volts, relay) => {
+            grid.innerHTML = ""; // Clear current content
+            for (let relay = 0; relay < Voltages.length; relay++) {
                 const card = document.createElement("div");
                 card.className = "card";
                 card.innerHTML = `
                     <h3>Cell ${relay + 1}</h3>
-                    <p>Nominal Voltage: ${volts[0].toFixed(2)} V</p>
-                    <p>Max Discharge Voltage: ${volts[1].toFixed(2)} V</p>
-                    <p>Max Burst Voltage: ${volts[2].toFixed(2)} V</p>`;
+                    <div class="voltage-row">
+                        <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
+                    </div>
+                    <div class="voltage-row">
+                        <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1].toFixed(2)} V</span>
+                    </div>
+                    <div class="voltage-row">
+                        <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
+                    </div>
+                `;
                 grid.appendChild(card);
-            });
+            }
         }
 
         function saveGlobalSettings() {
@@ -135,27 +182,31 @@
             Voltages.forEach((volts, relay) => {
                 const relayDiv = document.createElement("div");
                 relayDiv.className = "cell";
+
                 relayDiv.innerHTML = `
                     <h2 id="cellText${relay + 1}">Cell #${relay + 1}</h2>
                     <button class="activate-relay" onclick="activateRelay(${relay})">Activate Relay</button>
-                    <div class="single-test">
-                        <select id="testMode${relay + 1}">
-                            <option value="0">Nominal</option>
-                            <option value="1">Const DCHG</option>
-                            <option value="2">Burst DCHG</option>
-                        </select>
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                        <button onclick="fullSingleTest(${relay + 1})">Full Single Test</button>
                         <button onclick="singleTest(${relay + 1}, document.getElementById('testMode${relay + 1}').value)">Single Test</button>
+                        <div class="single-test">
+                            <select id="testMode${relay + 1}">
+                                <option value="0">Nominal</option>
+                                <option value="1">Const DCHG</option>
+                                <option value="2">Burst DCHG</option>
+                            </select>
+                        </div>
                     </div>
-                    <button onclick="fullSingleTest(${relay + 1})">Full Single Test</button>
                 `;
                 relayGrid.appendChild(relayDiv);
             });
         }
 
+
 document.addEventListener("DOMContentLoaded", () => {
     renderRelays();
     renderVoltageCards();
-    setInterval(updateVoltages, 1000);
+    setInterval(updateVoltages, 1000);   
 });
 
     </script>
