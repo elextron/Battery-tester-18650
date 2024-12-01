@@ -34,7 +34,7 @@
             padding: 15px;
         }
         button {
-            background-color: #28a745;
+            background-color: #4CAFED;
             color: white;
             border: none;
             border-radius: 5px;
@@ -54,9 +54,10 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
         }
+
         .slider-container {
             text-align: center;
             margin-bottom: 20px;
@@ -127,10 +128,36 @@
             renderVoltageCards();
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            renderVoltageCards();
-            setInterval(updateVoltages, 1000);
-        });
+        function renderRelays() {
+            const relayGrid = document.getElementById("relayGrid");
+            relayGrid.innerHTML = ""; // Clear existing content
+
+            Voltages.forEach((volts, relay) => {
+                const relayDiv = document.createElement("div");
+                relayDiv.className = "cell";
+                relayDiv.innerHTML = `
+                    <h2 id="cellText${relay + 1}">Cell #${relay + 1}</h2>
+                    <button class="activate-relay" onclick="activateRelay(${relay})">Activate Relay</button>
+                    <div class="single-test">
+                        <select id="testMode${relay + 1}">
+                            <option value="0">Nominal</option>
+                            <option value="1">Const DCHG</option>
+                            <option value="2">Burst DCHG</option>
+                        </select>
+                        <button onclick="singleTest(${relay + 1}, document.getElementById('testMode${relay + 1}').value)">Single Test</button>
+                    </div>
+                    <button onclick="fullSingleTest(${relay + 1})">Full Single Test</button>
+                `;
+                relayGrid.appendChild(relayDiv);
+            });
+        }
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderRelays();
+    renderVoltageCards();
+    setInterval(updateVoltages, 1000);
+});
+
     </script>
 </head>
 <body>
@@ -144,39 +171,10 @@
             </label>
         </div>
 
-        <div class="grid">
-            <!-- Cell 1 -->
-            <div class="cell">
-                <h2 id="cellText1">Cell #1</h2>
-                <button class="activate-relay" onclick="activateRelay(0)">Activate Relay</button>
-                <div class="single-test">
-                    <select id="testMode1">
-                        <option value="0">Nominal</option>
-                        <option value="1">Const DCHG</option>
-                        <option value="2">Burst DCHG</option>
-                    </select>
-                    <button onclick="singleTest(1, document.getElementById('testMode1').value)">Single Test</button>
-                </div>
-                <button onclick="fullSingleTest(1)">Full Single Test</button>
-            </div>
-            <!-- Repeat for other cells -->
-            <!-- Cell 2 -->
-            <div class="cell">
-                <h2 id="cellText2">Cell #2</h2>
-                <button class="activate-relay" onclick="activateRelay(1)">Activate Relay</button>
-                <div class="single-test">
-                    <select id="testMode2">
-                        <option value="0">Nominal</option>
-                        <option value="1">Const DCHG</option>
-                        <option value="2">Burst DCHG</option>
-                    </select>
-                    <button onclick="singleTest(2, document.getElementById('testMode2').value)">Single Test</button>
-                </div>
-                <button onclick="fullSingleTest(2)">Full Single Test</button>
-            </div>
-        </div>
+        <div id="relayGrid" class="grid">
+            <!-- Relays will be rendered dynamically -->
+        </div>    
         
-
 		<div class="cell">
         <h3>Test results</h3>
         <div id="grid" class="grid">
