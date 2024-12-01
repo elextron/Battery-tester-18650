@@ -17,9 +17,34 @@
             padding: 0;
         }
     
+        .activate-relay {
+            height: 50%;
+            width: 100%;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
         .card {
             padding: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #7a7ad8;
             border-radius: 5px;
             margin-bottom: 10px;
             background-color: #2E2E3F;
@@ -39,6 +64,16 @@
             text-align: center;
         }
     
+        .cell {
+            border: 1px solid #5b5b99;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #2E2E3F;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
         .cell button {
             background-color: #4CAFED;
             border: none;
@@ -53,6 +88,11 @@
             background-color: #307ABF;
         }
     
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
         .cell h2 {
             color: #4CAFED;
             font-size: 1.4em;
@@ -81,9 +121,9 @@
     
         .grid {
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            grid-template-columns: repeat(4, 1fr);
-            margin-bottom: 20px;
+            padding: 10px;
         }
     
         h1 {
@@ -92,6 +132,21 @@
             margin: 20px 0;
         }
     
+        .single-test {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .single-test select {
+            flex: 1;
+            margin-right: 5px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
         .slider-container {
             margin-bottom: 20px;
             text-align: center;
@@ -220,6 +275,14 @@
             console.log(`Single Test for Relay ${relay}`);
         }
 
+        function singleTest(cellIndex, testMode) {
+            const settings = testSettings[testMode]; // Retrieve settings based on mode
+            console.log(`Running Single Test for Cell ${cellIndex} in mode: ${testMode}`);
+            console.log(settings); // Logs selected settings
+            // Proceed with test logic here...
+        }
+
+
         function fullSingleTest(relay) {
             console.log(`Full Single Test for Cell ${relay}`);
         }
@@ -307,32 +370,34 @@
             <!-- Cell 1 -->
             <div class="cell">
                 <h2 id="cellText1">Cell #1</h2>
-                <button onclick="activateRelay(0)">Activate Relay</button>
-                <button onclick="singleTest(1)">Single Test</button>
-				<button onclick="fullSingleTest(1)">Full Single Test</button>
+                <button class="activate-relay" onclick="activateRelay(0)">Activate Relay</button>
+                <div class="single-test">
+                    <select id="testMode1">
+                        <option value="0">Nominal</option>
+                        <option value="1">Const DCHG</option>
+                        <option value="2">Burst DCHG</option>
+                    </select>
+                    <button onclick="singleTest(1, document.getElementById('testMode1').value)">Single Test</button>
+                </div>
+                <button onclick="fullSingleTest(1)">Full Single Test</button>
             </div>
+            <!-- Repeat for other cells -->
             <!-- Cell 2 -->
             <div class="cell">
                 <h2 id="cellText2">Cell #2</h2>
-                <button onclick="activateRelay(1)">Activate Relay</button>
-                <button onclick="singleTest(2)">Single Test</button>
-				<button onclick="fullSingleTest(2)">Full Single Test</button>
-            </div>
-            <!-- Cell 3 -->
-            <div class="cell">
-                <h2 id="cellText3">Cell #3</h2>
-                <button onclick="activateRelay(2)">Activate Relay</button>
-                <button onclick="singleTest(3)">Single Test</button>
-				<button onclick="fullSingleTest(3)">Full Single Test</button>
-            </div>
-            <!-- Cell 4 -->
-            <div class="cell">
-                <h2 id="cellText4">Cell #4</h2>
-                <button onclick="activateRelay(3)">Activate Relay</button>
-                <button onclick="singleTest(4)">Single Test</button>
-				<button onclick="fullSingleTest(4)">Full Single Test</button>
+                <button class="activate-relay" onclick="activateRelay(1)">Activate Relay</button>
+                <div class="single-test">
+                    <select id="testMode2">
+                        <option value="0">Nominal</option>
+                        <option value="1">Const DCHG</option>
+                        <option value="2">Burst DCHG</option>
+                    </select>
+                    <button onclick="singleTest(2, document.getElementById('testMode2').value)">Single Test</button>
+                </div>
+                <button onclick="fullSingleTest(2)">Full Single Test</button>
             </div>
         </div>
+        
 
 		<div class="cell">
         <h3>Test results</h3>
