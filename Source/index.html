@@ -16,100 +16,9 @@
             margin: 0;
             padding: 0;
         }
-    
-        .activate-relay {
-            height: 50%;
-            width: 100%;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        .card {
-            padding: 15px;
-            border: 1px solid #7a7ad8;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            background-color: #2E2E3F;
-        }
-
-        .card h3 {
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 1.2em;
+        h1, h2, h3 {
             color: #4CAFED;
         }
-    
-        .test data {
-            background-color: #33334A;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-        }
-    
-        .cell {
-            border: 1px solid #5b5b99;
-            border-radius: 5px;
-            padding: 15px;
-            background-color: #2E2E3F;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .cell button {
-            background-color: #4CAFED;
-            border: none;
-            border-radius: 8px;
-            color: #1E1E2F;
-            cursor: pointer;
-            margin: 10px 0;
-            padding: 10px 15px;
-        }
-    
-        .cell button:hover {
-            background-color: #307ABF;
-        }
-    
-        h2 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .cell h2 {
-            color: #4CAFED;
-            font-size: 1.4em;
-            margin-bottom: 10px;
-        }
-    
-        .cell input[type="text"] {
-            background-color: #2E2E3F;
-            border: 1px solid #4CAFED;
-            border-radius: 8px;
-            color: #FFFFFF;
-            margin: 5px 0;
-            padding: 8px;
-            text-align: center;
-            width: calc(100% - 20px);
-        }
-    
         .container {
             background-color: #2A2A3B;
             border-radius: 10px;
@@ -118,241 +27,110 @@
             padding: 20px;
             width: 90%;
         }
-    
+        .cell, .card {
+            background-color: #2E2E3F;
+            border: 1px solid #5b5b99;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        input[type="text"] {
+            background-color: #2E2E3F;
+            border: 1px solid #4CAFED;
+            border-radius: 8px;
+            color: #FFFFFF;
+            padding: 8px;
+            width: calc(100% - 20px);
+        }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            padding: 10px;
         }
-    
-        h1 {
-            color: #4CAFED;
-            font-weight: 700;
-            margin: 20px 0;
-        }
-    
-        .single-test {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .single-test select {
-            flex: 1;
-            margin-right: 5px;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
         .slider-container {
-            margin-bottom: 20px;
             text-align: center;
-            width: 100%;
+            margin-bottom: 20px;
         }
-    
-        .slider-container input {
-            width: 80%;
-        }
-    
         .slider-container label {
             color: #FFFFFF;
             font-size: 1.2em;
         }
-    
-        .switch {
-            display: inline-block;
-            height: 34px;
-            position: relative;
-            width: 60px;
-        }
-    
-        .switch input {
-            height: 0;
-            opacity: 0;
-            width: 0;
-        }
-    
-        .slider {
-            background-color: #ccc;
-            border-radius: 50px;
-            bottom: 0;
-            cursor: pointer;
-            left: 0;
-            position: absolute;
-            right: 0;
-            top: 0;
-            transition: 0.4s;
-        }
-    
-        .slider:before {
-            background-color: white;
-            border-radius: 50px;
-            bottom: 4px;
-            content: "";
-            height: 26px;
-            left: 4px;
-            position: absolute;
-            transition: 0.4s;
-            width: 26px;
-        }
-    
-        input:checked + .slider {
-            background-color: #4CAFED;
-        }
-    
-        input:checked + .slider:before {
-            background-color: #4CAFED;
-            transform: translateX(26px);
-        }
-    
-        .voltages-container {
-            margin-top: 20px;
-            text-align: left;
-        }
-    
-        .voltages-section {
-            margin: 20px 0;
-            text-align: center;
-        }
-    
-        .voltage-item {
-            color: #4CAFED;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-
-        .voltage-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-
-        .voltage-row span:first-child {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
     </style>
-		
     <script>
-        let activeCells = [false, false, false, false]; // Track the state of each cell (active or inactive)
-		
-		// Example array to simulate Voltages[4][3] (replace with actual values from your program)
-		let Voltages = [
-			[3.71, 3.65, 3.72], // Cell 1 voltages
-			[3.68, 3.60, 3.75], // Cell 2 voltages
-			[3.69, 3.64, 3.70], // Cell 3 voltages
-			[3.67, 3.61, 3.74]  // Cell 4 voltages
-		];
-
-        function toggleSlider() {
-            let slider = document.getElementById("enableSlider");
-            if (slider.checked) {
-                slider.parentNode.querySelector('.slider').style.backgroundColor = "#4CAFED";
-            } else {
-                slider.parentNode.querySelector('.slider').style.backgroundColor = "#ccc";
-            }
-        }
-
-        function toggleCell(cell) {
-            activeCells[cell] = !activeCells[cell]; // Toggle the cell state
-            let cellText = document.getElementById(`cellText${cell + 1}`);
-            cellText.style.color = activeCells[cell] ? '#4CAFED' : '#FFFFFF'; // Change text color based on the state
-        }
+        let activeCells = [false, false, false, false];
+        let Voltages = [
+            [3.71, 3.65, 3.72],
+            [3.68, 3.60, 3.75],
+            [3.69, 3.64, 3.70],
+            [3.67, 3.61, 3.74]
+        ];
 
         function activateRelay(cell) {
-            activeCells[cell] = !activeCells[cell]; // Toggle the relay state
-            let cellText = document.getElementById(`cellText${cell + 1}`);
-            cellText.style.color = activeCells[cell] ? '#4CAFED' : '#FFFFFF'; // Change text color based on the state
-            console.log(`Relay ${cell + 1} activated`);
+            activeCells[cell] = !activeCells[cell];
+            const cellText = document.getElementById(`cellText${cell + 1}`);
+            cellText.style.color = activeCells[cell] ? '#4CAFED' : '#FFFFFF';
+            console.log(`Relay ${cell + 1} ${activeCells[cell] ? 'activated' : 'deactivated'}`);
         }
 
-        function singleTest(relay) {
-            console.log(`Single Test for Relay ${relay}`);
+        function connectDCLoad() {
+            console.log("DC Load connected and initialized");
         }
-
-        function singleTest(cellIndex, testMode) {
-            const settings = testSettings[testMode]; // Retrieve settings based on mode
-            console.log(`Running Single Test for Cell ${cellIndex} in mode: ${testMode}`);
-            console.log(settings); // Logs selected settings
-            // Proceed with test logic here...
-        }
-
 
         function fullSingleTest(relay) {
-            console.log(`Full Single Test for Cell ${relay}`);
+            console.log(`Full Single Test for Relay ${relay}`);
         }
 
         function fullSweep() {
             console.log("Full Sweep initiated");
         }
 
-        function saveGlobalSettings() {
-            console.log("Global Settings saved");
-        }
-
-        function saveCellSettings(cell) {
-            const duration = document.getElementById(`duration${cell}`).value;
-            const discharge = document.getElementById(`discharge${cell}`).value;
-            console.log(`Saved settings for Cell ${cell}: Duration: ${duration}s, Discharge: ${discharge}C`);
-        }
-
-        function connectDCLoad() {
-            console.log("DC Load connected and initialized");
-        }
-		
-		// Function to update Setting 2 voltage readings
-		//function updateSetting2Voltages() {
-		//	for (let relay = 0; relay < 4; relay++) {
-		//		document.getElementById(`voltage${relay + 1}`).textContent = Voltages[relay][1].toFixed(2);
-		//	}
-		//}
-		
-		// Function to render voltage cards
         function renderVoltageCards() {
             const grid = document.getElementById("grid");
-            grid.innerHTML = ""; // Clear current content
-            for (let relay = 0; relay < Voltages.length; relay++) {
+            grid.innerHTML = "";
+            Voltages.forEach((volts, relay) => {
                 const card = document.createElement("div");
                 card.className = "card";
                 card.innerHTML = `
                     <h3>Cell ${relay + 1}</h3>
-                    <div class="voltage-row">
-                        <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
-                    </div>
-                    <div class="voltage-row">
-                        <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1].toFixed(2)} V</span>
-                    </div>
-                    <div class="voltage-row">
-                        <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
-                    </div>
-                `;
+                    <p>Nominal Voltage: ${volts[0].toFixed(2)} V</p>
+                    <p>Max Discharge Voltage: ${volts[1].toFixed(2)} V</p>
+                    <p>Max Burst Voltage: ${volts[2].toFixed(2)} V</p>`;
                 grid.appendChild(card);
-            }
+            });
         }
 
+        function saveGlobalSettings() {
+            console.log("Global Settings saved");
+        }
 
-        // Update voltages periodically (simulate data updates)
+        function singleTest(cellIndex, testMode) {
+            console.log(`Single Test for Cell ${cellIndex}, Mode: ${testMode}`);
+        }
+
+        function toggleSlider() {
+            const slider = document.getElementById("enableSlider");
+            slider.parentNode.querySelector('.slider').style.backgroundColor = slider.checked ? "#4CAFED" : "#ccc";
+        }
+
         function updateVoltages() {
-            for (let i = 0; i < Voltages.length; i++) {
-                for (let j = 0; j < Voltages[i].length; j++) {
-                    // Simulate voltage fluctuation
-                    Voltages[i][j] += (Math.random() - 0.5) * 0.01; 
-                }
-            }
-            renderVoltageCards(); // Re-render cards with updated values
+            Voltages = Voltages.map(volts => volts.map(v => v + (Math.random() - 0.5) * 0.01));
+            renderVoltageCards();
         }
 
-        // Initial render
-        renderVoltageCards();
-
-        // Update voltages every second
-        setInterval(updateVoltages, 1000);
-		
+        document.addEventListener("DOMContentLoaded", () => {
+            renderVoltageCards();
+            setInterval(updateVoltages, 1000);
+        });
     </script>
 </head>
 <body>
