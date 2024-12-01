@@ -22,15 +22,17 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 10px;
-            background-color: #33334A;
+            background-color: #2E2E3F;
         }
-    
+
         .card h3 {
-            color: #4CAFED;
+            text-align: center;
             margin-bottom: 10px;
+            font-size: 1.2em;
+            color: #4CAFED;
         }
     
-        .cell {
+        .test data {
             background-color: #33334A;
             border-radius: 8px;
             padding: 15px;
@@ -249,25 +251,25 @@
 		
 		// Function to render voltage cards
         function renderVoltageCards() {
-         const grid = document.getElementById("grid");
-         grid.innerHTML = ""; // Clear current content
-         for (let relay = 0; relay < Voltages.length; relay++) {
-             const card = document.createElement("div");
-             card.className = "card";
-             card.innerHTML = `
-                   <h3>Cell ${relay + 1}</h3>
+            const grid = document.getElementById("grid");
+            grid.innerHTML = ""; // Clear current content
+            for (let relay = 0; relay < Voltages.length; relay++) {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.innerHTML = `
+                    <h3>Cell ${relay + 1}</h3>
                     <div class="voltage-row">
-                     <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
-                 </div>
-                 <div class="voltage-row">
+                        <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
+                    </div>
+                    <div class="voltage-row">
                         <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1].toFixed(2)} V</span>
-                  </div>
-                  <div class="voltage-row">
-                      <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
-                  </div>
-             `;
-              grid.appendChild(card);
-        }
+                    </div>
+                    <div class="voltage-row">
+                        <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
         }
 
 
@@ -333,8 +335,8 @@
             </div>
         </div>
 
-		<div class="section">
-        <h3>Voltages (Test 1-3)</h3>
+		<div class="cell">
+        <h3>Test results</h3>
         <div id="grid" class="grid">
             <!-- Voltage cards will be populated here -->
         </div>
@@ -359,24 +361,16 @@
 			
 		</div>
 		
-		<div class='split'>
+		<div class='cell'>
 			<div class="cell">
 				<input type="text" placeholder="Cell Capacity" id="CellCapacity">
+                <input type="text" placeholder="Duration (s)" id="duration1"> <!-- ms -->
+                <input type="text" placeholder="Discharge (C)" id="discharge1"> <!-- mAh -->
 				<input type="text" placeholder="Sweep Cell Delay" id="sweepCellDelay">
 				<input type="text" placeholder="Test Mode Delay" id="testModeDelay">
 				<input type="text" placeholder="Read Volt Offset" id="readVoltOffset">
 			</div>
 		</div>
-		
-		<div class='split'>
-			<div class="voltages-container">
-				<h2>Cell Voltages</h2>
-				<div id="cellVoltages">
-					<!-- JavaScript will populate this dynamically -->
-				</div>
-		</div>
-		</div>
-
 
         <div class="cell">
 			<h2>DC Load Settings</h2>
