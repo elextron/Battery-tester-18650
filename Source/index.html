@@ -18,13 +18,11 @@
         }
     
         .card {
-            background-color: #2E2E3F;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-            color: #FFFFFF;
-            padding: 15px 20px;
-            text-align: center;
-            width: 200px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #33334A;
         }
     
         .card h3 {
@@ -155,7 +153,7 @@
     
         .voltages-container {
             margin-top: 20px;
-            text-align: center;
+            text-align: left;
         }
     
         .voltages-section {
@@ -169,12 +167,20 @@
             font-weight: bold;
             margin: 5px 0;
         }
+
+        .voltage-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .voltage-row span:first-child {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
     </style>
-    
 		
-		
-		
-    </style>
     <script>
         let activeCells = [false, false, false, false]; // Track the state of each cell (active or inactive)
 		
@@ -243,20 +249,27 @@
 		
 		// Function to render voltage cards
         function renderVoltageCards() {
-            const grid = document.getElementById("grid");
-            grid.innerHTML = ""; // Clear current content
-            for (let relay = 0; relay < Voltages.length; relay++) {
-                const card = document.createElement("div");
-                card.className = "card";
-                card.innerHTML = `
-                    <h3>Cell ${relay + 1}</h3>
-                    <div>Voltage (Setting 1): ${Voltages[relay][0].toFixed(2)} V</div>
-                    <div>Voltage (Setting 2): ${Voltages[relay][1].toFixed(2)} V</div>
-                    <div>Voltage (Setting 3): ${Voltages[relay][2].toFixed(2)} V</div>
-                `;
-                grid.appendChild(card);
-            }
+         const grid = document.getElementById("grid");
+         grid.innerHTML = ""; // Clear current content
+         for (let relay = 0; relay < Voltages.length; relay++) {
+             const card = document.createElement("div");
+             card.className = "card";
+             card.innerHTML = `
+                   <h3>Cell ${relay + 1}</h3>
+                    <div class="voltage-row">
+                     <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
+                 </div>
+                 <div class="voltage-row">
+                        <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1].toFixed(2)} V</span>
+                  </div>
+                  <div class="voltage-row">
+                      <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
+                  </div>
+             `;
+              grid.appendChild(card);
         }
+        }
+
 
         // Update voltages periodically (simulate data updates)
         function updateVoltages() {
@@ -293,8 +306,6 @@
             <div class="cell">
                 <h2 id="cellText1">Cell #1</h2>
                 <button onclick="activateRelay(0)">Activate Relay</button>
-                <input type="text" placeholder="Duration (s)" id="duration1"> <!-- ms -->
-                <input type="text" placeholder="Discharge (C)" id="discharge1"> <!-- mAh -->
                 <button onclick="singleTest(1)">Single Test</button>
 				<button onclick="fullSingleTest(1)">Full Single Test</button>
                 <button onclick="saveCellSettings(0)">Save</button>
@@ -349,7 +360,7 @@
 		</div>
 		
 		<div class='split'>
-			<div class="settings">
+			<div class="cell">
 				<input type="text" placeholder="Cell Capacity" id="CellCapacity">
 				<input type="text" placeholder="Sweep Cell Delay" id="sweepCellDelay">
 				<input type="text" placeholder="Test Mode Delay" id="testModeDelay">
@@ -367,7 +378,7 @@
 		</div>
 
 
-        <div class="dc-load-settings">
+        <div class="cell">
 			<h2>DC Load Settings</h2>
 			<input type="text" placeholder="DC Load IP Address" id="dcLoadIP" class="dc-load-input">
 			<input type="text" placeholder="DC Load Port" id="dcLoadPort" class="dc-load-input">
