@@ -102,6 +102,7 @@
                     white-space: pre-wrap;
                     border: 1px solid #333;
                     margin-top: 10px;
+                    min-height: 200px;
                 }
         
                 /* Styling for card components */
@@ -396,24 +397,23 @@
             let EN = false;
             let DCLoadConnected = false; /**Boolkean to store if dcload is connected and ready for commands/
             
+            /* Initialize the slider when the page loads */
+            window.onload = initializeSlider;
 
-            /* Function to add messages to the terminal window */
-            function logToTerminal(message) {
-                const terminal = document.getElementById('terminal');
-                terminal.innerHTML += message + '\n';
-                terminal.scrollTop = terminal.scrollHeight; /* Automatically scroll to the bottom */
-            }
-                
+            /* Function to add messages to the terminal window */                
             function logMessage(level, message) {
                 const terminal = document.getElementById('terminal');
                 const logElement = document.createElement('div');
+                if (terminal.children.length > 2) {
+                    terminal.removeChild(terminal.lastChild);
+                }
                 logElement.classList.add('log', level); // Add both 'log' and the level class (debug, info, warning)
-                logElement.textContent = `[${level.toUpperCase()}]: ${message}`;
-                terminal.appendChild(logElement);
-            
-            /* Initialize the slider when the page loads */
-            window.onload = initializeSlider;
-            
+                logElement.textContent = 'SNOPP!' + `[${level.toUpperCase()}]: ${message}`;
+               // terminal.innerHTML = logElement + '\n' + terminal.innerHTML;
+                terminal.prepend(logElement);
+                
+                //terminal.appendChild(logElement);
+                       
             }     
 
             function toggleSlider() {
@@ -425,13 +425,6 @@
                 slider.parentNode.querySelector('.slider').style.backgroundColor = slider.checked ? "#4b58c7" : "#4CAFED";
             }
 
-            /* Function to update state and style 
-            function toggleSlider() {
-                const slider = document.getElementById("enableSlider");
-                EN = slider.checked; /* Update the state 
-                console.log("Relays enabled:", EN);
-            }
-            */
             /* Function to initialize the slider state */
             function initializeSlider() {
                 const slider = document.getElementById("enableSlider");
@@ -484,7 +477,7 @@
                 // 
             function fullSingleTest(relay) {
                 if (!readyToRun()) {
-                    logMessage('info', 'Running all tests on Cell, -(relay)'); // Log the message
+                    logMessage('info', 'Running all tests on Cell, ' + relay); // Log the message
                     console.log(`Full Single Test for Relay ${relay}`); // Får ej värdet att visas
                     return -1;
                 }
