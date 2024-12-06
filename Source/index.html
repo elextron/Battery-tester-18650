@@ -383,6 +383,7 @@
 
         <body>
             <script>
+            /_* Should be stored as an array i common code (Arduino) or are these even used ? */
             let activeCells = [false, false, false, false];
             let Voltages = [
                 [3.71, 3.65, 3.72],
@@ -391,8 +392,9 @@
                 [3.67, 3.61, 3.74]
             ];
             
-            /* Boolean variable to store state */
+            /* Boolean variable to store state   Shoulkd these be in main c code instead ??*/
             let EN = false;
+            let DCLoadConnected = false; /**Boolkean to store if dcload is connected and ready for commands/
             
 
             /* Function to add messages to the terminal window */
@@ -456,7 +458,7 @@
                 .catch((err) => console.error(err));
                 }
             
-
+                // Why dont i work ??
             function updateRelayButtons() {
                 const buttons = document.querySelectorAll(".activate-relay");
                 buttons.forEach((button, index) => {
@@ -471,7 +473,7 @@
             function connectDCLoad() {
                 console.log("Settingup DC Load");
                 logMessage('info', 'Trying to connect to DC Load');
-                // DCLoad.init();
+                // if (DCLoad.init()) logMessage('warning', 'Unable to connect to $dcLoadIP');
             }
             
             function singleTest(cellIndex, testMode) {
