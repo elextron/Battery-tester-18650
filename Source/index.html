@@ -46,34 +46,32 @@
 			<input type="text" placeholder="Sweep Cell Delay" id="sweepCellDelay">
 			<input type="text" placeholder="Test Mode Delay" id="testModeDelay">
 			<input type="text" placeholder="Read Volt Offset" id="readVoltOffset">
-			<h1>
-			<h1>
-			<button onclick="saveGlobalSettings()" class="dc-load-button">Save</button>
 		</div>
 		<div class="cell">
-			<h3>Nominal Settings</h3>
+			<h3>Nominal Settings</h3> <!-- These should have save for current cell, and save all cells- add function to save-->
 			<input type="text" placeholder="Duration (s)" id="duration0"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge0"> <!-- mAh -->
 			<h1>
-			<h1>
-			<button onclick="saveGlobalSettings()" class="dc-load-button">Save</button>             	
+			<h1>         	
 		</div>
 		<div class="cell">
 			<h3>Continious DCHG</h3>
 			<input type="text" placeholder="Duration (s)" id="duration1"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge1"> <!-- mAh -->
 			<h1>
-			<h1>
-			<button onclick="saveGlobalSettings()" class="dc-load-button">Save</button>             	
+			<h1>          	
 		</div>
-		<div class="gridField">
+		<div class="cell">
 			<h3>Burst DCHG</h3>
 			<input type="text" placeholder="Duration (s)" id="duration2"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge2"> <!-- mAh -->
 			<h1>
-			<h1>
-			<button onclick="saveGlobalSettings()" class="dc-load-button">Save</button>             	
+			<h1>            	
 		</div>
+        <div>
+            <button onclick="saveGlobalSettings()" class="dc-load-button">Save for active cell</button>  <!-- Want Save for cell n-->
+            <button onclick="saveAll()" class="dc-load-button">Save for all cells</button>
+        </div>
             <style>
                 /* Align body contents to center */
                 body {
@@ -157,7 +155,7 @@
                     cursor: pointer;
                     font-size: 18px;
                     margin-bottom: 30px;
-                    padding: 60px;
+                    padding: 30px;
                     width: 100%;
                 }
         
@@ -198,7 +196,7 @@
         
                 /* Grid layout for fields */
                 .gridField {
-                    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
                     display: grid;
                     gap: 80px;
                 }
@@ -375,19 +373,29 @@
         <body>
             <script>
             /_* Should be stored as an array i common code (Arduino) or are these even used ? */
-            let activeCells = [false, false, false, false];
-            let Voltages = [
-                [3.71, 3.65, 3.72],
-                [3.68, 3.60, 3.75],
-                [3.69, 3.64, 3.70],
-                [3.67, 3.61, 3.74]
-            ];
+            // Global variables to store data
+let activeCells = [false, false, false, false];
+let Voltages = [
+    [3.71, 3.65, 3.72],
+    [3.68, 3.60, 3.75],
+    [3.69, 3.64, 3.70],
+    [3.67, 3.61, 3.74]
+];
+
+let EN = false;              // Boolean to store the state of the slider
+let DCLoadConnected = false; // Boolean to store if the DC load is connected
+let activeRelay = null;      // Variable to track the currently active relay
+
+// Temporary test settings mirroring the backend structure
+const testSettings = [
+    { cellCapacity: 3200, currentC: 0.5, duration: 10 },
+    { cellCapacity: 3200, currentC: 1.0, duration: 2 },
+    { cellCapacity: 3200, currentC: 2.0, duration: 10 },
+    { cellCapacity: 3200, currentC: 3.0, duration: 1 }
+];
             
-            /* Boolean variable to store state   Shoulkd these be in main c code instead ??*/
-            let EN = false;
-            let DCLoadConnected = false; /**Boolkean to store if dcload is connected and ready for commands*/
-            
-            /* Dubble toggles for some reason*/
+            /* Dubble toggles for some reason also when enablked it says deactivated and no test can be done as if en is false , but its not*/  
+            /* exept for fullsweep which says en deactivated, but nothing happens when EN = true.*/
             function toggleSlider() {
                     EN = document.getElementById("enableSlider").checked;
                     logMessage(EN ? 'debug' : 'warning', EN ? 'Relays Deactivated!' : '! Relays Activated !');
@@ -404,13 +412,14 @@
 
             /* Function to add messages to the terminal window */                
             function logMessage(level, message) {
+                let activeRelay = null;
                 const terminal = document.getElementById('terminal');
                 const logElement = document.createElement('div');
                 if (terminal.children.length > 2) {
                     terminal.removeChild(terminal.lastChild);
                 }
                 logElement.classList.add('log', level); // Add both 'log' and the level class (debug, info, warning)
-                logElement.textContent = 'SNOPP!' + `[${level.toUpperCase()}]: ${message}`;
+                logElement.textContent = `[${level.toUpperCase()}]: ${message}`;
                 terminal.prepend(logElement);
                        
             }     
@@ -489,22 +498,27 @@
             }
 
 
-            function runTest(testType, cellIndex = null) {
-                if (!readyToRun()) return -1;
-                let message;
-                if (testType === 'single') {
-                    console.log(`Single Test for Cell ${cellIndex}`);
-                    message = `Running single test on Cell ${cellIndex}`;
-                } else if (testType === 'fullSingle') {
-                    console.log(`Full Single Test for Relay ${cellIndex}`);
-                    message = `Running all tests on Cell ${cellIndex}`;
-                } else if (testType === 'sweep') {
-                    console.log("Full Sweep initiated");
-                    message = 'Beginning sweeping cells 1-4. All tests';
-                }
+            function runTest(testType, cellIndex = null) { // Add Test type also  .  but where is the test senarios taken from ????
+                    if (!readyToRun()) return -1;
 
-                logMessage('info', message);
-            }
+                    let message;
+                    let current = Voltages[cellIndex - 1][0]; // Example: Using nominal voltage as current placeholder
+                    let duration = 10; // Example: Hardcoded duration; replace with dynamic value if available
+
+                    if (testType === 'single') {
+                        console.log(`Single Test for Cell ${cellIndex}`);
+                        message = `Running single test on Cell ${cellIndex} @ ${current.toFixed(2)}A / ${duration} seconds`;
+
+                    } else if (testType === 'fullSingle') {
+                        console.log(`Full Single Test for Relay ${cellIndex}`);
+                        message = `Running all tests on Cell ${cellIndex} @ ${current.toFixed(2)}A / ${duration} seconds`;
+                    } else if (testType === 'sweep') {
+                        console.log("Full Sweep initiated");
+                        message = 'Beginning sweeping cells 1-4. All tests';
+                    }
+
+                    logMessage('info', message);
+                }
 
             function renderVoltageCards() {
                 const grid = document.getElementById("grid");
@@ -537,6 +551,7 @@
             }
 
             function saveGlobalSettings() {
+                // How and where is the question...
                 logMessage('info', 'Settings saved to EEPROM');
                 console.log("Global Settings saved");
             }
@@ -577,7 +592,7 @@
                             <select id="testMode${relay + 1}">
                                 <option value="0">Nominal</option>
                                 <option value="1">Const DCHG</option>
-                                <option value="2">Burst DCHG</option>
+                                <option value="2">Burst DCHG</option> <!-- When buttons are pressed the selecteds setting here should be passed on-->
                             </select>
                         </div>
                     </div>
