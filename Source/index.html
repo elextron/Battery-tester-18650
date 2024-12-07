@@ -42,6 +42,7 @@
 		<div class='gridField'>
 		<div class="cell">
 			<h3>Global Settings</h3>
+            <input type="text" placeholder="Cell Capacity" id="CellCapacity">
 			<input type="text" placeholder="Sweep Cell Delay" id="sweepCellDelay">
 			<input type="text" placeholder="Test Mode Delay" id="testModeDelay">
 			<input type="text" placeholder="Read Volt Offset" id="readVoltOffset">
@@ -51,7 +52,6 @@
 		</div>
 		<div class="cell">
 			<h3>Nominal Settings</h3>
-			<input type="text" placeholder="Cell Capacity" id="CellCapacity">
 			<input type="text" placeholder="Duration (s)" id="duration0"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge0"> <!-- mAh -->
 			<h1>
@@ -60,16 +60,14 @@
 		</div>
 		<div class="cell">
 			<h3>Continious DCHG</h3>
-			<input type="text" placeholder="Cell Capacity" id="CellCapacity">
 			<input type="text" placeholder="Duration (s)" id="duration1"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge1"> <!-- mAh -->
 			<h1>
 			<h1>
 			<button onclick="saveGlobalSettings()" class="dc-load-button">Save</button>             	
 		</div>
-		<div class="cell">
+		<div class="gridField">
 			<h3>Burst DCHG</h3>
-			<input type="text" placeholder="Cell Capacity" id="CellCapacity">
 			<input type="text" placeholder="Duration (s)" id="duration2"> <!-- ms -->
 			<input type="text" placeholder="Discharge (C)" id="discharge2"> <!-- mAh -->
 			<h1>
@@ -220,14 +218,6 @@
                     display: grid;
                     gap: 10px;
                     width: 100%;
-                }
-        
-                /* Buttons grouped into a grid */
-                .gridButtons {
-                    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-                    background-color: #2A2A3B;
-                    display: grid;
-                    gap: 80px;
                 }
         
                 /* Layout for top-level controls */
@@ -395,10 +385,22 @@
             
             /* Boolean variable to store state   Shoulkd these be in main c code instead ??*/
             let EN = false;
-            let DCLoadConnected = false; /**Boolkean to store if dcload is connected and ready for commands/
+            let DCLoadConnected = false; /**Boolkean to store if dcload is connected and ready for commands*/
             
+            /* Dubble toggles for some reason*/
+            function toggleSlider() {
+                    EN = document.getElementById("enableSlider").checked;
+                    logMessage(EN ? 'debug' : 'warning', EN ? 'Relays Deactivated!' : '! Relays Activated !');
+                    console.log("Relays enabled:", EN);
+                    document.querySelector('.slider').style.backgroundColor = EN ? "#4b58c7" : "#4CAFED";
+            }
+
             /* Initialize the slider when the page loads */
-            window.onload = initializeSlider;
+            window.onload = () => {
+                    const slider = document.getElementById("enableSlider");
+                    slider.checked = EN; // Set initial state
+                    slider.addEventListener("change", toggleSlider);
+            };
 
             /* Function to add messages to the terminal window */                
             function logMessage(level, message) {
@@ -409,29 +411,11 @@
                 }
                 logElement.classList.add('log', level); // Add both 'log' and the level class (debug, info, warning)
                 logElement.textContent = 'SNOPP!' + `[${level.toUpperCase()}]: ${message}`;
-               // terminal.innerHTML = logElement + '\n' + terminal.innerHTML;
                 terminal.prepend(logElement);
-                
-                //terminal.appendChild(logElement);
                        
             }     
-
-            function toggleSlider() {
-                const slider = document.getElementById("enableSlider");
-                if (!EN) logMessage('warning', '! Relays Activated !');
-                if (EN) logMessage('debug', 'Realys Deactivated!'); 
-                EN = slider.checked; /* Update the state */
-                console.log("Relays enabled:", EN);
-                slider.parentNode.querySelector('.slider').style.backgroundColor = slider.checked ? "#4b58c7" : "#4CAFED";
-            }
-
-            /* Function to initialize the slider state */
-            function initializeSlider() {
-                const slider = document.getElementById("enableSlider");
-                slider.checked = EN; /* Set initial state */
-            }
-            
-            
+             
+            /* */
             function activateRelay(relay) {
                 console.log("Active Relay: ", relay);
                 fetch(`/activateRelay?relay=${relay}`)
@@ -449,7 +433,7 @@
                 }
                 })
                 .catch((err) => console.error(err));
-                }
+                }  
             
                 // Why dont i work ??
             function updateRelayButtons() {
@@ -469,6 +453,7 @@
                 // if (DCLoad.init()) logMessage('warning', 'Unable to connect to $dcLoadIP');
             }
             
+            /*
             function singleTest(cellIndex, testMode) {
                  if (!readyToRun()) console.log(`Single Test for Cell ${cellIndex}, Mode: ${testMode}`);               
             }
@@ -490,7 +475,37 @@
                     return -1;
                 }
             }
-            
+            */
+            function singleTest(cellIndex, testMode) {
+                runTest('single', cellIndex);
+            }
+
+            function fullSingleTest(relay) {
+                runTest('fullSingle', relay);
+            }
+
+            function fullSweep() {
+                runTest('sweep');
+            }
+
+
+            function runTest(testType, cellIndex = null) {
+                if (!readyToRun()) return -1;
+                let message;
+                if (testType === 'single') {
+                    console.log(`Single Test for Cell ${cellIndex}`);
+                    message = `Running single test on Cell ${cellIndex}`;
+                } else if (testType === 'fullSingle') {
+                    console.log(`Full Single Test for Relay ${cellIndex}`);
+                    message = `Running all tests on Cell ${cellIndex}`;
+                } else if (testType === 'sweep') {
+                    console.log("Full Sweep initiated");
+                    message = 'Beginning sweeping cells 1-4. All tests';
+                }
+
+                logMessage('info', message);
+            }
+
             function renderVoltageCards() {
                 const grid = document.getElementById("grid");
                 grid.innerHTML = ""; /* Clear current content */

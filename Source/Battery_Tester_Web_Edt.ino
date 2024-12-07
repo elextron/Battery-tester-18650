@@ -16,10 +16,10 @@
 #define EEPROM_SIZE 512          // Anpassa storleken vid behov
 #define EEPROM_INIT_FLAG_ADDR 0  // Första adressen i EEPROM
 #define SETTINGS_START_ADDR 1    // Startadress för inställningar
+#include <DCLoad.h>
 
-WiFiUDP udp;
-unsigned int dcLoadPort = 18190;      // Replace with your DC Load's UDP port
-IPAddress dcLoadIP(192, 168, 2, 18);  // Replace with your DC Load's IP address
+const char* dcLoadIP = "192.168.2.18";  // Replace with your DC Load's IP
+const uint16_t dcLoadPort = 18190;      // Replace with your DC Load's UDP port
 
 // Web server on port 80
 AsyncWebServer server(80);
@@ -34,8 +34,8 @@ struct testSettings {
   float readVoltOffset;  // Voltage offset adjustment
 };
 
-// Array to hold settings for each test
-testSettings testSettings[3];
+// Array to hold settings for each Cell
+testSettings testSettings[4];
 
 // Array to hold battery voltages for 3 diffrent senarios.
 float Voltages[4][3] = {
@@ -48,12 +48,15 @@ float Voltages[4][3] = {
 
 // Tracks the active relay (-1 = none)
 int activeRelay = -1;
+// Tracks state of EN PIN
+boolean EN = false;
 
 // Function prototypes
 void singleTest(float currentC, int duration);
 void FullSingleTest(int Re);
 void FullSweep();
 String getVoltageResponse();
+int InitDCLoad();
 void getVoltageFromDCLoad();
 void sendCommandToDCLoad(const String &command, float value = 0.0);  // Use String instead of void
 void ActivateRelay(int relay);
@@ -76,9 +79,7 @@ void setup() {
     for (int i = 0; i < 3; i++) {
       testSettings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };  // Default values
     }
-
     saveSettingsToEEPROM();
-
     // Mark EEPROM as initialized
     EEPROM.write(EEPROM_INIT_FLAG_ADDR, 1);
     EEPROM.commit();
@@ -93,9 +94,6 @@ void setup() {
                     i + 1, testSettings[i].currentC, testSettings[i].duration, testSettings[i].sweepCellDelay);
     }
   }
-
-
-
   // Validera inställningar (för säkerhets skull)
   validateSettings();
 
@@ -129,6 +127,10 @@ void setup() {
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi.");
+  dcload.begin();
+  Serial.println("Enter command in the format: T,<cell>,<setting>");
+  Serial.println("Example: T,1,1 (runs test on Cell 1 with Settings 1)");
+  Serial.println("Or enter SCPI commands starting with ':' (e.g., :VOLTage?)");
 
   // Web server setup
 server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -335,7 +337,7 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 
 
 
-
+/*
   server.on("/setENPin", HTTP_GET, [](AsyncWebServerRequest *request) {
     // Kontrollera om parameter "state" finns
     if (request->hasParam("state")) {
@@ -356,14 +358,18 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
       request->send(400, "text/plain", "Missing state parameter.");
     }
   });
-
+*/
   server.on("/toggleEN", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (request->hasParam("state")) {
       String state = request->getParam("state")->value();
       if (state == "ON") {
         digitalWrite(EN_PIN, HIGH);  // Turn ON
+        EN = true; // Save state to global boolean
+        Serial.println("EN_PIN set to HIGH (Relays powered ON)");
       } else {
         digitalWrite(EN_PIN, LOW);  // Turn OFF
+        EN = false;
+        Serial.println("EN_PIN set to LOW (Relays powered OFF)");
       }
       request->send(200, "text/plain", "EN_PIN is " + state);
     } else {
@@ -411,26 +417,52 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
   });
 
   // Endpoint to save test settings
-  server.on("/saveSettings", HTTP_POST, [](AsyncWebServerRequest *request) {
+// Handler for the '/saveSettings' route, triggered by a POST request
+server.on("/saveSettings", HTTP_POST, [](AsyncWebServerRequest *request) {
+
+    // Loop through all the parameters received in the POST request
     for (int i = 0; i < request->params(); i++) {
-      AsyncWebParameter *p = request->getParam(i);
-      if (p->name().startsWith("current")) {
-        int index = p->name().substring(7).toInt() - 1;
-        testSettings[index].currentC = p->value().toFloat();
-      } else if (p->name().startsWith("duration")) {
-        int index = p->name().substring(8).toInt() - 1;
-        testSettings[index].duration = p->value().toInt();
-      } else if (p->name().startsWith("sweep")) {
-        int index = p->name().substring(5).toInt() - 1;
-        testSettings[index].sweepCellDelay = p->value().toInt();
-      } else if (p->name().startsWith("testmode")) {
-        int index = p->name().substring(8).toInt() - 1;
-        testSettings[index].testModeDelay = p->value().toInt();
-      } else if (p->name().startsWith("offset")) {
-        int index = p->name().substring(6).toInt() - 1;
-        testSettings[index].readVoltOffset = p->value().toFloat();
-      }
+        // Get the current parameter by its index in the request
+        AsyncWebParameter *p = request->getParam(i);
+
+        // Check if the parameter's name starts with "current", indicating it's a 'current' setting
+        if (p->name().startsWith("current")) {
+            // Extract the cell index from the parameter name (after the "current" prefix)
+            int index = p->name().substring(7).toInt() - 1;  // Substring starts from index 7 (after "current")
+            // Update the corresponding 'currentC' field for the specific cell in 'testSettings'
+            testSettings[index].currentC = p->value().toFloat(); // Convert value to float (C value for discharge)
+
+        // Check if the parameter's name starts with "duration", indicating it's a 'duration' setting
+        } else if (p->name().startsWith("duration")) {
+            // Extract the cell index from the parameter name (after the "duration" prefix)
+            int index = p->name().substring(8).toInt() - 1;  // Substring starts from index 8 (after "duration")
+            // Update the corresponding 'duration' field for the specific cell in 'testSettings'
+            testSettings[index].duration = p->value().toInt(); // Convert value to integer (duration in seconds)
+
+        // Check if the parameter's name starts with "sweep", indicating it's a 'sweepCellDelay' setting
+        } else if (p->name().startsWith("sweep")) {
+            // Extract the cell index from the parameter name (after the "sweep" prefix)
+            int index = p->name().substring(5).toInt() - 1;  // Substring starts from index 5 (after "sweep")
+            // Update the corresponding 'sweepCellDelay' field for the specific cell in 'testSettings'
+            testSettings[index].sweepCellDelay = p->value().toInt(); // Convert value to integer (delay in ms)
+
+        // Check if the parameter's name starts with "testmode", indicating it's a 'testModeDelay' setting
+        } else if (p->name().startsWith("testmode")) {
+            // Extract the cell index from the parameter name (after the "testmode" prefix)
+            int index = p->name().substring(8).toInt() - 1;  // Substring starts from index 8 (after "testmode")
+            // Update the corresponding 'testModeDelay' field for the specific cell in 'testSettings'
+            testSettings[index].testModeDelay = p->value().toInt(); // Convert value to integer (delay in ms)
+
+        // Check if the parameter's name starts with "offset", indicating it's a 'readVoltOffset' setting
+        } else if (p->name().startsWith("offset")) {
+            // Extract the cell index from the parameter name (after the "offset" prefix)
+            int index = p->name().substring(6).toInt() - 1;  // Substring starts from index 6 (after "offset")
+            // Update the corresponding 'readVoltOffset' field for the specific cell in 'testSettings'
+            testSettings[index].readVoltOffset = p->value().toFloat(); // Convert value to float (offset value for voltage readings)
+        }
     }
+});
+
     Serial.println("Testmode Settings Saved");
     request->send(200, "text/plain", "Settings saved");
   });
@@ -513,28 +545,49 @@ server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     }
   });
 
+  server.on("/initDCLoad", HTTP_GET, [](AsyncWebServerRequest *request) {
+  if InitDCLoad() {
+    request->send(200, "text/plain", voltage);  // Send voltage back to the web interface
+  } else {
+      request->send(400, "text/plain", "Missing parameters");
+    }
+  });
 
   server.begin();
   Serial.println("Server started.");
 }
 
 void loop() {
-  // Placeholder for main logic
-  //for (size_t i = 0; i < request->params(); i++) {  // Corrected loop comparison
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim(); // Remove any extra spaces or newlines
 
-  // rest of the loop code
-  //sendCommandToDCLoad(":VOLT 5V");  // Example command to set voltage
-  // sendCommandToDCLoad(":CURR?");
+    // Check if the command is an SCPI command (starts with ':')
+    if (command.startsWith(":")) {
+      Serial.println("Forwarding SCPI command: " + command);
+      dcload.forwardCommand(command);
+    }
+    // Check if the command is a test command (starts with 'T,')
+    else if (command.startsWith("T,")) {
+      int cell = command.substring(2, command.indexOf(',', 2)).toInt();
+      int setting = command.substring(command.indexOf(',', 2) + 1).toInt();
 
-  //delay(100);  // Wait for the DC Load to process the command
+      // Validate cell and setting input
+      if (cell >= 1 && cell <= 4 && setting >= 1 && setting <= 3) {
+        Serial.print("Running test on Cell ");
+        Serial.print(cell);
+        Serial.print(" with Settings ");
+        Serial.println(setting);
 
-  String response = receiveResponse();
-  if (response != "") {
-    Serial.println("Received response: " + response);
+        // Call the loadTest function with appropriate indices
+        dcload.loadTest(cell - 1, settings[setting - 1].duration, settings[setting - 1].currentC, setting - 1, settings[setting - 1].CellCapacity, settings[setting - 1].readVoltOffset);
+      } else {
+        Serial.println("Invalid input. Use format: T,<cell>,<setting> (Cells: 1-4, Settings: 1-3)");
+      }
+    } else {
+      Serial.println("Invalid command. Use format: T,<cell>,<setting> or SCPI command starting with ':'");
+    }
   }
-
-  //Serial.println(ESP.getFreeHeap());
-  //delay(100);  // Adjust the delay as needed
 }
 
 
@@ -619,6 +672,10 @@ void FullSweep() {
   //}
 }
 
+int InitDCLoad(){
+  // Connect to dc load. if ok Return 1 else -1
+  return -1;
+}
 
 void sendCommandToDCLoad(const String &command, float value) {
   udp.beginPacket(dcLoadIP, dcLoadPort);  // Start a UDP packet to the DC Load
