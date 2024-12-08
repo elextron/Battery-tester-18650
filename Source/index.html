@@ -11,7 +11,7 @@
 			<div class="slider-container">
 				<label for="enableSlider">Enable Relays:</label><br>
 				<label class="switch">
-				<input type="checkbox" id="enableSlider" onchange="toggleSlider()">
+				<input type="checkbox" id="enableSlider" onchange="enableSlider()">
 				<span class="slider"></span>
 				</label>
 			</div>
@@ -69,8 +69,9 @@
 			<h1>            	
 		</div>
         <div>
-            <button onclick="saveGlobalSettings()" class="dc-load-button">Save for active cell</button>  <!-- Want Save for cell n-->
-            <button onclick="saveAll()" class="dc-load-button">Save for all cells</button>
+            <button onclick="saveAll()" class="dc-load-button">Save for active cell</button>  <!-- Want Save for cell n-->
+            <button onclick="saveGlobalSettings()" class="dc-load-button">Save for all cells</button>
+            <button onclick="debug()" class="dc-load-button">Print out data</button> <!-- DEBUG(CELL) how do i add active cell in this-->
         </div>
             <style>
                 /* Align body contents to center */
@@ -374,31 +375,33 @@
             <script>
             /_* Should be stored as an array i common code (Arduino) or are these even used ? */
             // Global variables to store data
-let activeCells = [false, false, false, false];
-let Voltages = [
-    [3.71, 3.65, 3.72],
-    [3.68, 3.60, 3.75],
-    [3.69, 3.64, 3.70],
-    [3.67, 3.61, 3.74]
-];
+                let activeCells = [false, false, false, false];
+                var Voltages = [
+                    [3.71, 3.65, 3.72],
+                    [3.68, 3.60, 3.75],
+                    [3.69, 3.64, 3.70],
+                    [3.67, 3.61, 3.74]
+                ];
 
-let EN = false;              // Boolean to store the state of the slider
-let DCLoadConnected = false; // Boolean to store if the DC load is connected
-let activeRelay = null;      // Variable to track the currently active relay
+                var EN = false;              // Boolean to store the state of the slider
+                var DCLoadConnected = false; // Boolean to store if the DC load is connected
+                var activeRelay = -1;      // Variable to track the currently active relay
 
-// Temporary test settings mirroring the backend structure
-const testSettings = [
-    { cellCapacity: 3200, currentC: 0.5, duration: 10 },
-    { cellCapacity: 3200, currentC: 1.0, duration: 2 },
-    { cellCapacity: 3200, currentC: 2.0, duration: 10 },
-    { cellCapacity: 3200, currentC: 3.0, duration: 1 }
-];
+                // Temporary test settings mirroring the backend structure
+            const testSettings = [
+                { cellCapacity: 3200, currentC: 0.5, duration: 10, readVoltOffset: 0.1 },
+                { cellCapacity: 3200, currentC: 1.0, duration: 2, readVoltOffset: 0.1 },
+                { cellCapacity: 3200, currentC: 2.0, duration: 10, readVoltOffset: 0.1 },
+                { cellCapacity: 3200, currentC: 3.0, duration: 1, readVoltOffset: 0.1 }
+            ];
             
             /* Dubble toggles for some reason also when enablked it says deactivated and no test can be done as if en is false , but its not*/  
             /* exept for fullsweep which says en deactivated, but nothing happens when EN = true.*/
-            function toggleSlider() {
+            function enableSlider() {
                     EN = document.getElementById("enableSlider").checked;
-                    logMessage(EN ? 'debug' : 'warning', EN ? 'Relays Deactivated!' : '! Relays Activated !');
+                    //if (EN) EN = true; 
+                    //else EN = false;
+                    logMessage(EN ? 'warning' : 'debug' , EN ? '! Relays Activated !' : 'Relays Deactivated!');
                     console.log("Relays enabled:", EN);
                     document.querySelector('.slider').style.backgroundColor = EN ? "#4b58c7" : "#4CAFED";
             }
@@ -407,15 +410,15 @@ const testSettings = [
             window.onload = () => {
                     const slider = document.getElementById("enableSlider");
                     slider.checked = EN; // Set initial state
-                    slider.addEventListener("change", toggleSlider);
+                    slider.addEventListener("change", enableSlider);
             };
 
             /* Function to add messages to the terminal window */                
             function logMessage(level, message) {
-                let activeRelay = null;
+                //let activeRelay = null;
                 const terminal = document.getElementById('terminal');
                 const logElement = document.createElement('div');
-                if (terminal.children.length > 2) {
+                if (terminal.children.length > 7) {
                     terminal.removeChild(terminal.lastChild);
                 }
                 logElement.classList.add('log', level); // Add both 'log' and the level class (debug, info, warning)
@@ -425,24 +428,60 @@ const testSettings = [
             }     
              
             /* */
-            function activateRelay(relay) {
-                console.log("Active Relay: ", relay);
-                fetch(`/activateRelay?relay=${relay}`)
-                .then((response) => {
-                if (!response.ok) throw new Error("Failed to activate relay");
-                    return response.json();
-                })
+                function activateRelay(relay) {
+                    // Set the active relay to the selected relay number
+                    activeRelay = relay;
 
-                .then((data) => {
-                if (data.success) {
-                    activeRelay = relay; // Update activeRelay
-                    updateRelayButtons(); // Update button colors
-                } else {
-                    alert("Failed to activate relay. Check EN state.");
+                    // Log and console message indicating the active cell
+                    logMessage('info', `Cell #${relay} is now active.`);
+                    console.log(`Cell #${relay} is now active.`);
+
+                    // Send a request to the backend to activate the relay
+                    fetch(`/activateRelay?relay=${relay}`)
+                        .then((response) => {
+                            if (!response.ok) throw new Error("Failed to activate relay");
+                            return response.json();
+                        })
+                        .then((data) => {
+                            if (data.success) {
+                                updateRelayButtons();  // Update button colors to reflect the active relay
+                                logMessage('info', `Relay ${relay} activated successfully.`);
+                            } else {
+                                alert("Failed to activate relay. Check EN state.");
+                                logMessage('error', `Relay ${relay} activation failed.`);
+                            }
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                            logMessage('error', `Error: ${err.message}`);
+                        })
+                        .finally(() => {
+                            // Call the backend function to update relays in the Arduino code
+                            fetch(`/updateRelays?relay=${relay}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ relay: relay })
+                            })
+                            .then((response) => {
+                                if (!response.ok) throw new Error("Failed to run backend function updateRelays");
+                                return response.json();
+                            })
+                            .then((data) => {
+                                if (data.success) {
+                                    logMessage('info', `Backend function updateRelays(${relay}) executed successfully.`);
+                                    console.log(`Backend function updateRelays(${relay}) executed successfully.`);
+                                } else {
+                                    logMessage('error', `Backend function updateRelays(${relay}) failed.`);
+                                    console.error(`Backend function updateRelays(${relay}) failed.`);
+                                }
+                            })
+                            .catch((err) => {
+                                console.error(err);
+                                logMessage('error', `Error calling updateRelays: ${err.message}`);
+                            });
+                        });
                 }
-                })
-                .catch((err) => console.error(err));
-                }  
+ 
             
                 // Why dont i work ??
             function updateRelayButtons() {
@@ -459,61 +498,41 @@ const testSettings = [
             function connectDCLoad() {
                 console.log("Settingup DC Load");
                 logMessage('info', 'Trying to connect to DC Load');
-                // if (DCLoad.init()) logMessage('warning', 'Unable to connect to $dcLoadIP');
+                // if (DCLoad.init()) logMessage('warning', 'Unable to connect to $dcLoadIP'); Connection to DCLoad is managed by web ui
             }
             
-            /*
             function singleTest(cellIndex, testMode) {
-                 if (!readyToRun()) console.log(`Single Test for Cell ${cellIndex}, Mode: ${testMode}`);               
-            }
-
-            
-                // 
-            function fullSingleTest(relay) {
-                if (!readyToRun()) {
-                    logMessage('info', 'Running all tests on Cell, ' + relay); // Log the message
-                    console.log(`Full Single Test for Relay ${relay}`); // Får ej värdet att visas
-                    return -1;
-                }
-            }
-            
-            function fullSweep() {
-                if (!readyToRun()) {
-                    logMessage('info', 'Begining sweeping cells 1-4. All tests');
-                    console.log("Full Sweep initiated");
-                    return -1;
-                }
-            }
-            */
-            function singleTest(cellIndex, testMode) {
+                log.Message("singel");
+                console.log(`Single Test for Cell ${cellIndex}, Mode: ${testMode}`);
                 runTest('single', cellIndex);
             }
 
             function fullSingleTest(relay) {
+                log.Message("fullsingel");
                 runTest('fullSingle', relay);
             }
 
             function fullSweep() {
+                log.Message("fullsweep");
                 runTest('sweep');
             }
 
-
-            function runTest(testType, cellIndex = null) { // Add Test type also  .  but where is the test senarios taken from ????
-                    if (!readyToRun()) return -1;
+            function runTest(testMode, cellIndex = null) { // Add Test type also  .  but where is the test senarios taken from ???? 
+                    if (readyToRun()) return;
 
                     let message;
                     let current = Voltages[cellIndex - 1][0]; // Example: Using nominal voltage as current placeholder
                     let duration = 10; // Example: Hardcoded duration; replace with dynamic value if available
 
-                    if (testType === 'single') {
+                    if (testType === '0') {
                         console.log(`Single Test for Cell ${cellIndex}`);
                         message = `Running single test on Cell ${cellIndex} @ ${current.toFixed(2)}A / ${duration} seconds`;
 
-                    } else if (testType === 'fullSingle') {
+                    } else if (testType === '1') {
                         console.log(`Full Single Test for Relay ${cellIndex}`);
                         message = `Running all tests on Cell ${cellIndex} @ ${current.toFixed(2)}A / ${duration} seconds`;
                     } else if (testType === 'sweep') {
-                        console.log("Full Sweep initiated");
+                        console.log("Full 2 initiated");
                         message = 'Beginning sweeping cells 1-4. All tests';
                     }
 
@@ -540,21 +559,48 @@ const testSettings = [
                     `;
                     grid.appendChild(card);
                 }
-            }
-            // If everything is in order tests can be initiated
-            function readyToRun() {
-                if (!EN) {
-                    logMessage('warning', 'Error: Cant run tests while slider is off (DISABLED)');
-                    console.log(`Error: Cant run tests while slider is off (DISABLED)`);
-                    return -1;
                 }
-            }
+
+                // If everything is in order tests can be initiated
+                function readyToRun() {
+                    if (!EN) {
+                        logMessage('warning', 'Error: Cannot run tests while slider is off (DISABLED)');
+                        return false;
+                    }
+                return true;
+                }
 
             function saveGlobalSettings() {
-                // How and where is the question...
-                logMessage('info', 'Settings saved to EEPROM');
-                console.log("Global Settings saved");
-            }
+                    // Retrieve input values and parse them
+                    let cellCapacity = parseInt(document.getElementById("CellCapacity").value) || 0;
+                    let sweepCellDelay = parseInt(document.getElementById("sweepCellDelay").value) || 0;
+                    let testModeDelay = parseInt(document.getElementById("testModeDelay").value) || 0;
+                    let readVoltOffset = parseFloat(document.getElementById("readVoltOffset").value) || 0;
+
+                    // Loop through the test settings and update each entry
+                    for (let i = 0; i < 3; i++) {
+                        let duration = parseFloat(document.getElementById(`duration${i}`).value) || 0;
+                        let discharge = parseFloat(document.getElementById(`discharge${i}`).value) || 0;
+
+                        testSettings[i].currentC = discharge;
+                        testSettings[i].duration = duration;
+                    }
+
+                    // Update the testSettings array with the new values
+                    testSettings[0].cellCapacity = cellCapacity;
+                    testSettings[0].sweepCellDelay = sweepCellDelay;
+                    testSettings[0].testModeDelay = testModeDelay;
+                    testSettings[0].readVoltOffset = readVoltOffset;
+
+                    // Log the updated settings
+                    logMessage('debug', 'Global settings saved for active cell.');
+                    logMessage('debug', 'Global Settings Saved:');
+                    logMessage('debug', `Read Voltage Offset: ${readVoltOffset}`);
+                    logMessage('debug', `Test Mode Delay: ${testModeDelay}`);
+                    logMessage('debug', `Sweep Cell Delay: ${sweepCellDelay}`);
+                    logMessage('debug', `Cell Capacity: ${cellCapacity}`);                  
+                }
+
             
             function updateVoltages() {
                 Voltages = Voltages.map(volts => volts.map(v => v + (Math.random() - 0.5) * 0.01));
@@ -592,7 +638,7 @@ const testSettings = [
                             <select id="testMode${relay + 1}">
                                 <option value="0">Nominal</option>
                                 <option value="1">Const DCHG</option>
-                                <option value="2">Burst DCHG</option> <!-- When buttons are pressed the selecteds setting here should be passed on-->
+                                <option value="2">Burst DCHG</option> 
                             </select>
                         </div>
                     </div>
@@ -628,6 +674,28 @@ const testSettings = [
                 setInterval(updateVoltages, 1000);   
             });
             
+            function debug(cell) {
+                
+                logMessage('debug', 'END OF PRINTOUT');
+                logMessage('info', '---------------');  
+                logMessage('debug', 'Cell Index: ' + cell);
+                let testMode = parseInt(document.getElementById(`testMode${1}`).value);
+                logMessage('debug', 'EN = ' + EN + '    activeRelay' + activeRelay + '     TestMode = ' + testMode);
+                 
+                //logMessage('debug',testSettings[0].cellCapacity +' mAh    '+testSettings[0].sweepCellDelay +' Sec  '+testSettings[0].testModeDelay +' Sec   '+testSettings[0].readVoltageOffset +'Sec'); 
+                logMessage('debug', 'cellCapacity = ' +     testSettings[0].cellCapacity         + ' mAh    '   +
+                                    'sweepCellDelay = ' +     testSettings[0].sweepCellDelay    + ' Sec'); 
+                logMessage('debug', 'testModeDelay = ' +     testSettings[0].testModeDelay        + ' Sec   '    +
+                                    'readVoltOffset = ' +     testSettings[0].readVoltOffset       + ' Sec');
+                logMessage('info', '---------------');
+
+                if (testMode === 0) logMessage('debug', 'Nominal Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
+                if (testMode === 1) logMessage('debug', 'DCHG Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
+                if (testMode === 2) logMessage('debug', 'Burst Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
+
+            }
+
+
             </script>
             </body>
 </html>
