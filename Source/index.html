@@ -11,15 +11,15 @@
 			<div class="slider-container">
 				<label for="enableSlider">Enable Relays:</label><br>
 				<label class="switch">
-				<input type="checkbox" id="enableSlider" onchange="enableSlider()">
+				<input type="checkbox" id="enableSlider">
 				<span class="slider"></span>
 				</label>
 			</div>
-			<!-- Terminal output window -->
-			<div id="terminal">
+			
+			<div id="terminal"><!-- Terminal output window 
 				<div class="log debug">logMessage('debug', 'This is a debug message')</div>
 				<div class="log info">[INFO]: This is an info message</div>
-				<div class="log warning">[WARNING]: This is a warning message</div>
+				<div class="log warning">[WARNING]: This is a warning message</div>-->
 			</div>
 			<div class="cellDcload">
 				<h2>DC Load Settings</h2>
@@ -174,7 +174,7 @@
         
                 /* Button hover effect */
                 button:hover {
-                    background-color: #277db3;
+                    background-color: rgb(255, 0, 85);
                 }
         
                 /* Small button styles */
@@ -368,6 +368,10 @@
                 .warning {
                     color: red; /* Red for warning messages */
                 }
+
+                .active-relay {
+                    background-color: green; /* Red for warning messages */
+                }
             </style>                            
         </head>
 
@@ -391,7 +395,6 @@
             const testSettings = [
                 { cellCapacity: 3200, currentC: 0.5, duration: 10, readVoltOffset: 0.1 },
                 { cellCapacity: 3200, currentC: 1.0, duration: 2, readVoltOffset: 0.1 },
-                { cellCapacity: 3200, currentC: 2.0, duration: 10, readVoltOffset: 0.1 },
                 { cellCapacity: 3200, currentC: 3.0, duration: 1, readVoltOffset: 0.1 }
             ];
             
@@ -413,6 +416,7 @@
                     slider.addEventListener("change", enableSlider);
             };
 
+
             /* Function to add messages to the terminal window */                
             function logMessage(level, message) {
                 //let activeRelay = null;
@@ -428,8 +432,14 @@
             }     
              
             /* */
-                function activateRelay(relay) {
+                function activateRelay(button, relay) {
+
                     // Set the active relay to the selected relay number
+                    const buttonsWithActiveClass = document.querySelectorAll('button.activate-relay');
+                    buttonsWithActiveClass.forEach(btn => {
+                        btn.classList.remove('active-relay');
+                    });
+                    button.classList.add('active-relay');
                     activeRelay = relay;
 
                     // Log and console message indicating the active cell
@@ -470,6 +480,7 @@
                                 if (data.success) {
                                     logMessage('info', `Backend function updateRelays(${relay}) executed successfully.`);
                                     console.log(`Backend function updateRelays(${relay}) executed successfully.`);
+                                    updateRelayButtons();
                                 } else {
                                     logMessage('error', `Backend function updateRelays(${relay}) failed.`);
                                     console.error(`Backend function updateRelays(${relay}) failed.`);
@@ -502,23 +513,26 @@
             }
             
             function singleTest(cellIndex, testMode) {
-                log.Message("singel");
+                if (!readyToRun()) return;
+                logMessage('info', "singel");
                 console.log(`Single Test for Cell ${cellIndex}, Mode: ${testMode}`);
                 runTest('single', cellIndex);
             }
 
             function fullSingleTest(relay) {
-                log.Message("fullsingel");
+                if (!readyToRun()) return;
+                logMessage('info', "fullsingel");
                 runTest('fullSingle', relay);
             }
 
             function fullSweep() {
-                log.Message("fullsweep");
+                if (!readyToRun()) return;
+                logMessage('info', "fullsweep");
                 runTest('sweep');
             }
 
             function runTest(testMode, cellIndex = null) { // Add Test type also  .  but where is the test senarios taken from ???? 
-                    if (readyToRun()) return;
+                    if (!readyToRun()) return;
 
                     let message;
                     let current = Voltages[cellIndex - 1][0]; // Example: Using nominal voltage as current placeholder
@@ -567,7 +581,7 @@
                         logMessage('warning', 'Error: Cannot run tests while slider is off (DISABLED)');
                         return false;
                     }
-                return true;
+                    return true;
                 }
 
             function saveGlobalSettings() {
@@ -630,7 +644,7 @@
                     }).join("");
                     
                     relayDiv.innerHTML = `
-                    <button class="activate-relay" style="cell" onclick="activateRelay(${relay})">Cell ${relay + 1}</button>
+                    <button class="activate-relay" style="cell" onclick="activateRelay(this, ${relay})">Cell ${relay + 1}</button>
                     <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
                         <button onclick="fullSingleTest(${relay + 1})">Full Test</button>
                         <button onclick="singleTest(${relay + 1}, document.getElementById('testMode${relay + 1}').value)">Single Test</button>
@@ -674,24 +688,21 @@
                 setInterval(updateVoltages, 1000);   
             });
             
-            function debug(cell) {
-                
-                logMessage('debug', 'END OF PRINTOUT');
-                logMessage('info', '---------------');  
-                logMessage('debug', 'Cell Index: ' + cell);
+            function debug() {
+                let activeCell = activeRelay + 1;
+                logMessage('warning', 'END OF PRINTOUT');
+                logMessage('info', '---------------'); 
                 let testMode = parseInt(document.getElementById(`testMode${1}`).value);
-                logMessage('debug', 'EN = ' + EN + '    activeRelay' + activeRelay + '     TestMode = ' + testMode);
-                 
-                //logMessage('debug',testSettings[0].cellCapacity +' mAh    '+testSettings[0].sweepCellDelay +' Sec  '+testSettings[0].testModeDelay +' Sec   '+testSettings[0].readVoltageOffset +'Sec'); 
+                logMessage('debug', 'EN = ' + EN + '    activeRelay = ' + activeRelay + '     TestMode = ' + testMode);
                 logMessage('debug', 'cellCapacity = ' +     testSettings[0].cellCapacity         + ' mAh    '   +
                                     'sweepCellDelay = ' +     testSettings[0].sweepCellDelay    + ' Sec'); 
                 logMessage('debug', 'testModeDelay = ' +     testSettings[0].testModeDelay        + ' Sec   '    +
                                     'readVoltOffset = ' +     testSettings[0].readVoltOffset       + ' Sec');
                 logMessage('info', '---------------');
 
-                if (testMode === 0) logMessage('debug', 'Nominal Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
-                if (testMode === 1) logMessage('debug', 'DCHG Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
-                if (testMode === 2) logMessage('debug', 'Burst Settings Active Cell T/C= ' + testSettings[cell].duration + '/' + testSettings[cell].currentC);
+                if (testMode === 0) logMessage('debug', 'Nominal Settings Cell ' + activeCell + '    '+ testSettings[activeCell].duration + ' Seconds   ' + testSettings[activeRelay].currentC + ' [C]');
+                if (testMode === 1) logMessage('debug', 'DCHG Settings Cell ' + activeCell + '    '+ testSettings[activeCell].duration + ' Seconds   ' + testSettings[activeRelay].currentC + ' [C]');
+                if (testMode === 2) logMessage('debug', 'Burst Settings Cell ' + activeCell + '    '+ testSettings[activeCell].duration + ' Seconds   ' + testSettings[activeRelay].currentC + ' [C]');
 
             }
 
