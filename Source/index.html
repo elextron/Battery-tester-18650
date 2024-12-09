@@ -21,16 +21,20 @@
 				<div class="log info">[INFO]: This is an info message</div>
 				<div class="log warning">[WARNING]: This is a warning message</div>-->
 			</div>
-			<div class="cellDcload">
+            <div class="cellDcload">
 				<h2>DC Load Settings</h2>
 				<input type="text" placeholder="DC Load IP Address" id="dcLoadIP" class="dc-load-input">
 				<input type="text" placeholder="DC Load Port" id="dcLoadPort" class="dc-load-input">
-				<h1>
-				<h1>
-				<h1>
-				<h1>
-				<button onclick="connectDCLoad()" class="dc-load-button">Connect to DC Load</button>
-			</div>
+				<h1></h1>
+				
+			    <div class="gridButton">
+                    <div class="cell"></div>
+                    <div class="cell">
+                    <button onclick="connectDCLoad()" class="dc-load-button">Connect to DC Load</button>  
+                    </div>
+                    <div class="cell"></div>
+                </div>
+            </div>
 		</div>
 		<!-- Relays will be rendered dynamically -->
 		<div id="relayGrid" class="grid"></div>
@@ -40,39 +44,105 @@
 			</div>
 		</div>
 		<div class='gridField'>
-		<div class="cell">
-			<h3>Global Settings</h3>
-            <input type="text" placeholder="Cell Capacity" id="CellCapacity">
-			<input type="text" placeholder="Sweep Cell Delay" id="sweepCellDelay">
-			<input type="text" placeholder="Test Mode Delay" id="testModeDelay">
-			<input type="text" placeholder="Read Volt Offset" id="readVoltOffset">
-		</div>
-		<div class="cell">
-			<h3>Nominal Settings</h3> <!-- These should have save for current cell, and save all cells- add function to save-->
-			<input type="text" placeholder="Duration (s)" id="duration0"> <!-- ms -->
-			<input type="text" placeholder="Discharge (C)" id="discharge0"> <!-- mAh -->
-			<h1>
-			<h1>         	
-		</div>
-		<div class="cell">
-			<h3>Continious DCHG</h3>
-			<input type="text" placeholder="Duration (s)" id="duration1"> <!-- ms -->
-			<input type="text" placeholder="Discharge (C)" id="discharge1"> <!-- mAh -->
-			<h1>
-			<h1>          	
-		</div>
-		<div class="cell">
-			<h3>Burst DCHG</h3>
-			<input type="text" placeholder="Duration (s)" id="duration2"> <!-- ms -->
-			<input type="text" placeholder="Discharge (C)" id="discharge2"> <!-- mAh -->
-			<h1>
-			<h1>            	
-		</div>
-        <div>
-            <button onclick="saveAll()" class="dc-load-button">Save for active cell</button>  <!-- Want Save for cell n-->
-            <button onclick="saveGlobalSettings()" class="dc-load-button">Save for all cells</button>
-            <button onclick="debug()" class="dc-load-button">Print out data</button> <!-- DEBUG(CELL) how do i add active cell in this-->
+
+            <!-- Global Settings Section -->
+            <div class="cell">
+                <h3>Global Settings</h3>
+        
+                <!-- Cell Capacity Input with Prefix and Suffix -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Cell:</span>
+                    <input type="text" placeholder="Capacity" id="CellCapacity">
+                    <span class="suffix">mAh</span>
+                </div>
+        
+                <!-- Sweep Cell Delay Input with Suffix -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Sweep delay</span>
+                    <input type="text" placeholder="Sweep Delay" id="sweepCellDelay">
+                    <span class="suffix">Sec</span>
+                </div>
+        
+                <!-- Test Mode Delay Input with Suffix -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Testmode delay</span>
+                    <input type="text" placeholder="Mode Delay" id="testModeDelay">
+                    <span class="suffix">Sec</span>
+                </div>
+        
+                <!-- Read Voltage Offset Input with Suffix -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Sample offset</span>
+                    <input type="text" placeholder="Volt Offset" id="readVoltOffset">
+                    <span class="suffix">Sec</span>
+                </div>
+            </div>
+        
+            <!-- Nominal Settings Section -->
+            <div class="cell">
+                <h3>Nominal Settings</h3>
+                
+                <!-- Duration Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge Time</span>
+                    <input type="text" placeholder="Duration (s)" id="duration0">
+                    <span class="suffix">Sec</span>
+                </div>
+        
+                <!-- Discharge Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge current</span>
+                    <input type="text" placeholder="Discharge (C)" id="discharge0">
+                    <span class="suffix">[C]</span>
+                </div>
+            </div>
+        
+            <!-- Continuous DCHG Section -->
+            <div class="cell">
+                <h3>Continuous DCHG</h3>
+        
+                <!-- Duration Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge Time</span>
+                    <input type="text" placeholder="Duration (Sec)" id="duration1">
+                    <span class="suffix">Sec</span>
+                </div>
+        
+                <!-- Discharge Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge current</span>
+                    <input type="text" placeholder="Discharge (C)" id="discharge1">
+                    <span class="suffix">[C]</span>
+                </div>
+            </div>
+        
+            <!-- Burst DCHG Section -->
+            <div class="cell">
+                <h3>Burst DCHG</h3>
+        
+                <!-- Duration Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge Time</span>
+                    <input type="text" placeholder="Duration (Sec)" id="duration2">
+                    <span class="suffix">Sec</span>
+                </div>
+        
+                <!-- Discharge Input with Unit -->
+                <div class="input-with-prefix-suffix">
+                    <span class="prefix">Discharge current</span>
+                    <input type="text" placeholder="Discharge (C)" id="discharge2">
+                    <span class="suffix">[C]</span>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="saveAll()" class="dc-load-button">Save for active cell</button>  <!-- Want Save for cell n-->
+                <button onclick="saveGlobalSettings()" class="dc-load-button">Save for all cells</button>
+                <button onclick="debug()" class="buttonSmall">Print out data</button> <!-- DEBUG(CELL) how do i add active cell in this-->
+            </div>
+        
         </div>
+        
             <style>
                 /* Align body contents to center */
                 body {
@@ -101,7 +171,29 @@
                     margin-top: 10px;
                     min-height: 200px;
                 }
-        
+                
+                /* Container for input with prefix and suffix */
+            .input-with-prefix-suffix {
+                    display: flex;              /* Align items horizontally */
+                    align-items: center;        /* Vertically center items */
+                    margin-bottom: 10px;        /* Add space between each input group */
+                }
+
+                /* Style for the prefix and suffix */
+                .input-with-prefix-suffix .prefix,
+                .input-with-prefix-suffix .suffix {
+                    font-size: 14px;            /* Set the font size */
+                    color: #555;                /* Slightly gray color for the text */
+                    margin: 0 8px;              /* Add horizontal margin to separate from input */
+                }
+
+                /* Style for the input fields */
+                .input-with-prefix-suffix input {
+                    width: 150px;               /* Fixed width for input fields */
+                    padding: 5px;               /* Padding inside the input */
+                    margin: 0;                  /* Ensure no default margin */
+                }
+
                 /* Styling for card components */
                 .card {
                     background-color: #2E2E3F;
@@ -197,7 +289,7 @@
         
                 /* Grid layout for fields */
                 .gridField {
-                    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
                     display: grid;
                     gap: 80px;
                 }
@@ -212,10 +304,10 @@
         
                 /* Button grid layout */
                 .gridButton {
-                    grid-template-columns: 500 500 500;
+                    grid-template-columns: 30% 40% 30%;
                     align-items: center;
                     display: grid;
-                    gap: 10px;
+                    gap: 5px;
                     width: 100%;
                 }
         
