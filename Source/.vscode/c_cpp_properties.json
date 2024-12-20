@@ -1,0 +1,43 @@
+{
+    "configurations": [
+        {
+            "name": "ESP32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Program Files (x86)/Arduino/libraries",
+                "C:/Users/Kidsen/Documents/Arduino/libraries",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.0.7/cores/esp32",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.0.7/libraries",
+                "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/tools/sdk/include"
+            ],
+            "defines": [
+                "ESP32",
+                "ARDUINO=10805"
+            ],
+            "compilerPath": "C:/Users/Kidsen/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        },
+        {
+            "name": "ESP8266",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Program Files (x86)/Arduino/libraries",
+                "C:/Users/Kidsen/Documents/Arduino/libraries",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/cores/esp8266",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/libraries",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/sdk/include"
+            ],
+            "defines": [
+                "ESP8266",
+                "ARDUINO=10805"
+            ],
+            "compilerPath": "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/3.1.0-gcc10.3-e5f9fec/bin/xtensa-lx106-elf-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

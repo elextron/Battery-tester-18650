@@ -1,3 +1,7 @@
+#ifndef INDEX_H
+#define INDEX_H
+
+const char* html = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -814,3 +818,6 @@
             </script>
             </body>
 </html>
+)rawliteral";
+
+#endif // INDEX_H

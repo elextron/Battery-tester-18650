@@ -1,9 +1,11 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\Kidsen\\Documents\\GitHub\\Battery-tester-18650\\Source\\Battery_Tester_Web_Edt.ino"
 #include <ESP8266WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
-//include "DCLoad.h"
+#include "DCLoad.h"
 #include "secrets.h"
 #include "index.h"
 
@@ -23,7 +25,6 @@ const uint16_t dcLoadPort = 18190;      // Replace with your DC Load's UDP port
 
 // Web server on port 80
 AsyncWebServer server(80);
-WiFiUDP udp;
 
 // Test settings struct
 struct TestSettings {
@@ -57,9 +58,6 @@ int activeRelay = -1;
 // Tracks state of EN PIN
 boolean EN = false;
 
-// Ensure dcload object is defined
-//DCLoad dcload;
-
 // Function prototypes
 void singleTest(float currentC, int duration);
 void FullSingleTest(int Re);
@@ -86,9 +84,8 @@ void setup() {
 
     // Set default settings
     for (int i = 0; i < 4; i++) {
-      settings[i] = { 3200, 0.2, 10 };  // Default values
+      settings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };  // Default values
     }
-    globalSettings = { 1000, 500, 0.0 };  // Default global settings
     saveSettingsToEEPROM();
     // Mark EEPROM as initialized
     EEPROM.write(EEPROM_INIT_FLAG_ADDR, 1);
@@ -199,6 +196,15 @@ void setup() {
       } else if (p->name().startsWith("duration")) {
         int index = p->name().substring(8).toInt() - 1;
         settings[index].duration = p->value().toInt();
+      } else if (p->name().startsWith("sweep")) {
+        int index = p->name().substring(5).toInt() - 1;
+        settings[index].sweepCellDelay = p->value().toInt();
+      } else if (p->name().startsWith("testmode")) {
+        int index = p->name().substring(8).toInt() - 1;
+        settings[index].testModeDelay = p->value().toInt();
+      } else if (p->name().startsWith("offset")) {
+        int index = p->name().substring(6).toInt() - 1;
+        settings[index].readVoltOffset = p->value().toFloat();
       }
     }
     saveSettingsToEEPROM();
@@ -267,7 +273,7 @@ void FullSingleTest(int Re) {
 void FullSweep() {
   for (int i = 0; i < 4; i++) {
     singleTest(settings[i].currentC, settings[i].duration);
-    delay(globalSettings.sweepCellDelay);
+    delay(settings[i].sweepCellDelay);
   }
 }
 
@@ -335,12 +341,9 @@ void loadSettingsFromEEPROM() {
 void validateSettings() {
   for (int i = 0; i < 4; i++) {
     if (settings[i].currentC <= 0 || settings[i].duration <= 0) {
-      settings[i] = { 3200, 0.2, 10 };
+      settings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };
       Serial.println("Invalid settings detected. Resetting to defaults.");
     }
   }
-  if (globalSettings.sweepCellDelay <= 0 || globalSettings.testModeDelay <= 0) {
-    globalSettings = { 1000, 500, 0.0 };
-    Serial.println("Invalid global settings detected. Resetting to defaults.");
-  }
 }
+

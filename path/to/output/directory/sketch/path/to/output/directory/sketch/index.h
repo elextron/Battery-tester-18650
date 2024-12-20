@@ -1,3 +1,9 @@
+#line 1 "c:\\Users\\Kidsen\\Documents\\GitHub\\Battery-tester-18650\\Source\\path\\to\\output\\directory\\sketch\\index.h"
+#line 1 "c:\\Users\\Kidsen\\Documents\\GitHub\\Battery-tester-18650\\Source\\index.h"
+#ifndef INDEX_H
+#define INDEX_H
+
+const char* html = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -814,3 +820,6 @@
             </script>
             </body>
 </html>
+)rawliteral";
+
+#endif // INDEX_H
