@@ -3,40 +3,68 @@
         {
             "name": "ESP32",
             "includePath": [
-                "${workspaceFolder}/**",
+                "c:/Users/Kidsen/Documents/GitHub/Battery-tester-18650/**",
                 "C:/Program Files (x86)/Arduino/libraries",
                 "C:/Users/Kidsen/Documents/Arduino/libraries",
-                "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/cores/esp32",
-                "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/libraries",
-                "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/tools/sdk/include"
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.0.7/cores/esp32",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.0.7/libraries",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.0.7/tools"
             ],
             "defines": [
                 "ESP32",
                 "ARDUINO=10805"
             ],
-            "compilerPath": "C:/Users/Kidsen/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64"
+            "intelliSenseMode": "windows-gcc-x64",
+            "compilerPath": "C:/Users/Kidsen/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "c:/Users/Kidsen/Documents/GitHub/Battery-tester-18650/**",
+                    "C:/Program Files (x86)/Arduino/libraries",
+                    "C:/Users/Kidsen/Documents/Arduino/libraries",
+                    "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/cores/esp32",
+                    "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/libraries",
+                    "C:/Users/Kidsen/.platformio/packages/framework-arduinoespressif32/tools/sdk/include",
+                    "c:/Users/Kidsen/Documents/GitHub/Battery-tester-18650"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "compilerPathInCppPropertiesJson": "C:/Users/Kidsen/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe"
         },
         {
             "name": "ESP8266",
             "includePath": [
-                "${workspaceFolder}/**",
+                "c:/Users/Kidsen/Documents/GitHub/Battery-tester-18650/**",
                 "C:/Program Files (x86)/Arduino/libraries",
                 "C:/Users/Kidsen/Documents/Arduino/libraries",
-                "C:/Users/Kidsen/Documents/Arduino/hardware/esp8266/2.7.4/cores/esp8266",
-                "C:/Users/Kidsen/Documents/Arduino/hardware/esp8266/2.7.4/libraries",
-                "C:/Users/Kidsen/Documents/Arduino/hardware/esp8266/2.7.4/tools/sdk/include"
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/cores/esp8266",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/libraries",
+                "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/sdk/include"
             ],
             "defines": [
                 "ESP8266",
                 "ARDUINO=10805"
             ],
-            "compilerPath": "C:/Users/Kidsen/Documents/Arduino/hardware/esp8266/2.7.4/tools/xtensa-lx106-elf-gcc/bin/xtensa-lx106-elf-gcc.exe",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.33.31629/bin/Hostx64/x86/cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64"
+            "intelliSenseMode": "windows-msvc-x64",
+            "compilerPathInCppPropertiesJson": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.33.31629/bin/Hostx64/x86/cl.exe",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "c:/Users/Kidsen/Documents/GitHub/Battery-tester-18650/**",
+                    "C:/Program Files (x86)/Arduino/libraries",
+                    "C:/Users/Kidsen/Documents/Arduino/libraries",
+                    "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/cores/esp8266",
+                    "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/libraries",
+                    "C:/Users/Kidsen/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/sdk/include",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
