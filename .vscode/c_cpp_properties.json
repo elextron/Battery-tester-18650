@@ -31,7 +31,6 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true
             },
-            "compilerPathInCppPropertiesJson": "C:/Users/Kidsen/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe"
         },
         {
             "name": "ESP8266",
@@ -51,7 +50,6 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "compilerPathInCppPropertiesJson": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.33.31629/bin/Hostx64/x86/cl.exe",
             "mergeConfigurations": false,
             "browse": {
                 "path": [

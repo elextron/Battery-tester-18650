@@ -1,9 +1,9 @@
 #include <ESP8266WiFi.h>
-#include "C:\Users\Kidsen\Documents\Arduino\libraries\ESPAsyncWebServer\ESPAsyncWebServer.h"
+#include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
-#include "dcload.h"
+#include "DCLoad.h"
 #include "secrets.h"
 #include "index.h"
 
@@ -23,7 +23,6 @@ const uint16_t dcLoadPort = 18190;      // Replace with your DC Load's UDP port
 
 // Web server on port 80
 AsyncWebServer server(80);
-WiFiUDP udp;
 
 // Test settings struct
 struct TestSettings {
@@ -57,15 +56,9 @@ int activeRelay = -1;
 // Tracks state of EN PIN
 boolean EN = false;
 
-// Ensure dcload object is defined since this is defined here , but set in webui. it has to be loaded from eeeprom last settings. and if its chamged in webui it has to be updated in eeprom, and rebooted to apply settings or ??
-DCLoad dcload(dcLoadIP, dcLoadPort);
-
-// Ensure index_html is defined
-extern const char* index_html;
-
 // Function prototypes
 void singleTest(float currentC, int duration);
-void FullSingleTest();
+void FullSingleTest(int Re);
 void FullSweep();
 String getVoltageResponse();
 int InitDCLoad();
@@ -75,7 +68,6 @@ void ActivateRelay(int relay);
 void saveSettingsToEEPROM();
 void loadSettingsFromEEPROM();
 void validateSettings();
-void loadTest(int cell, int setting);
 
 void setup() {
   // Serial setup for debugging
@@ -90,9 +82,8 @@ void setup() {
 
     // Set default settings
     for (int i = 0; i < 4; i++) {
-      settings[i] = { 3200, 0.2, 10 };  // Default values
+      settings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };  // Default values
     }
-    globalSettings = { 1000, 500, 0.0 };  // Default global settings
     saveSettingsToEEPROM();
     // Mark EEPROM as initialized
     EEPROM.write(EEPROM_INIT_FLAG_ADDR, 1);
@@ -195,7 +186,7 @@ void setup() {
 
   // Endpoint to save test settings
   server.on("/saveSettings", HTTP_POST, [](AsyncWebServerRequest *request) {
-    for (size_t i = 0; i < request->params(); i++) {
+    for (int i = 0; i < request->params(); i++) {
       AsyncWebParameter *p = request->getParam(i);
       if (p->name().startsWith("current")) {
         int index = p->name().substring(7).toInt() - 1;
@@ -203,6 +194,15 @@ void setup() {
       } else if (p->name().startsWith("duration")) {
         int index = p->name().substring(8).toInt() - 1;
         settings[index].duration = p->value().toInt();
+      } else if (p->name().startsWith("sweep")) {
+        int index = p->name().substring(5).toInt() - 1;
+        settings[index].sweepCellDelay = p->value().toInt();
+      } else if (p->name().startsWith("testmode")) {
+        int index = p->name().substring(8).toInt() - 1;
+        settings[index].testModeDelay = p->value().toInt();
+      } else if (p->name().startsWith("offset")) {
+        int index = p->name().substring(6).toInt() - 1;
+        settings[index].readVoltOffset = p->value().toFloat();
       }
     }
     saveSettingsToEEPROM();
@@ -232,7 +232,7 @@ void loop() {
         Serial.print(" with Settings ");
         Serial.println(setting);
 
-        loadTest(cell - 1, setting - 1);
+        dcload.loadTest(cell - 1, settings[setting - 1].duration, settings[setting - 1].currentC, setting - 1, settings[setting - 1].CellCapacity, settings[setting - 1].readVoltOffset);
       } else {
         Serial.println("Invalid input. Use format: T,<cell>,<setting> (Cells: 1-4, Settings: 1-3)");
       }
@@ -250,7 +250,9 @@ void singleTest(float currentC, int duration) {
   unsigned long endTime = startTime + (duration * 1000);
 
   while (millis() < endTime) {
-    // Add your voltage reading logic here
+    if (millis() >= (endTime - settings[activeRelay].readVoltOffset)) {
+      Serial.print("Voltage at offset time: ");
+    }
   }
 
   Serial.println(":IMP OFF");
@@ -261,7 +263,7 @@ void singleTest(float currentC, int duration) {
   Serial.println(" seconds");
 }
 
-void FullSingleTest() {
+void FullSingleTest(int Re) {
   Serial.print("Running Test 1 on Cell #");
   Serial.println(activeRelay);
 }
@@ -269,7 +271,7 @@ void FullSingleTest() {
 void FullSweep() {
   for (int i = 0; i < 4; i++) {
     singleTest(settings[i].currentC, settings[i].duration);
-    delay(globalSettings.sweepCellDelay);
+    delay(settings[i].sweepCellDelay);
   }
 }
 
@@ -337,32 +339,8 @@ void loadSettingsFromEEPROM() {
 void validateSettings() {
   for (int i = 0; i < 4; i++) {
     if (settings[i].currentC <= 0 || settings[i].duration <= 0) {
-      settings[i] = { 3200, 0.2, 10 };
+      settings[i] = { 3200, 0.2, 10, 1000, 500, 0.0 };
       Serial.println("Invalid settings detected. Resetting to defaults.");
     }
   }
-  if (globalSettings.sweepCellDelay <= 0 || globalSettings.testModeDelay <= 0) {
-    globalSettings = { 1000, 500, 0.0 };
-    Serial.println("Invalid global settings detected. Resetting to defaults.");
-  }
-}
-
-void loadTest(int cell, int setting) {
-  float current = (settings[cell].CellCapacity * settings[setting].currentC) / 1000.0;
-  int duration = settings[setting].duration;
-  // Implement the load test logic
-  // Example: sendCommand(":LOAD:TEST", current);
-  Serial.print("Load test started for cell ");
-  Serial.print(cell);
-  Serial.print(" with duration ");
-  Serial.print(duration);
-  Serial.print(" seconds and current ");
-  Serial.print(current);
-  Serial.println(" A.");
-}
-
-void ActivateRelay(int relay) {
-  // Implement the relay activation logic
-  Serial.print("Activating relay ");
-  Serial.println(relay);
 }

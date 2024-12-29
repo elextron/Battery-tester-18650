@@ -141,7 +141,7 @@
                     <span class="suffix">[C]</span>
                 </div>
             </div>
-
+            
             <div>
                 <button  onclick="fullSweep()" class="buttonSmall">Full Sweep</button>
                 <button onclick="saveAll()" class="button">Save for active cell</button>  <!-- Want Save for cell n-->
@@ -165,7 +165,7 @@
                     margin: 0;
                     padding: 0;
                 }
-        
+                
                  /* Style for the message terminal window */
                 #terminal {
                     grid-column: 2 / span 2; /* Make the terminal span across both columns */
@@ -439,7 +439,7 @@
                 }    
                 
                  /* Voltage Card */
-                 .voltage-row {
+                .voltage-row {
                     
                     margin: 2px 0;
                     padding: 0px;
@@ -528,10 +528,8 @@
                 }
                 logElement.classList.add('log', level); // Add both 'log' and the level class (debug, info, warning)
                 logElement.textContent = `[${level.toUpperCase()}]: ${message}`;
-                terminal.prepend(logElement);
-                       
-            }     
-             
+                terminal.prepend(logElement);                       
+            }                  
             /* */
                 function activateRelay(button, relay) {
 
@@ -558,12 +556,13 @@
                                 updateRelayButtons();  // Update button colors to reflect the active relay
                                 logMessage('info', `Relay ${relay} activated successfully.`);
                             } else {
-                                alert("Failed to activate relay. Check EN state.");
+                                alert(data.message || "Failed to activate relay. Check EN state.");
                                 logMessage('error', `Relay ${relay} activation failed.`);
                             }
                         })
                         .catch((err) => {
                             console.error(err);
+                            alert(`Error: ${err.message}`);
                             logMessage('error', `Error: ${err.message}`);
                         })
                         .finally(() => {
@@ -593,7 +592,6 @@
                             });
                         });
                 }
- 
             
                 // Why dont i work ??
             function updateRelayButtons() {
@@ -608,11 +606,42 @@
             }
 
             function connectDCLoad() {
-                console.log("Settingup DC Load");
-                logMessage('info', 'Trying to connect to DC Load');
-                // if (DCLoad.init()) logMessage('warning', 'Unable to connect to $dcLoadIP'); Connection to DCLoad is managed by web ui
+                const dcLoadIP = document.getElementById("dcLoadIP").value;
+                const dcLoadPort = document.getElementById("dcLoadPort").value;
+                const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                const portPattern = /^[0-9]{1,5}$/;
+
+                if (!ipPattern.test(dcLoadIP)) {
+                    logMessage('warning', 'Invalid IP Address');
+                    return;
+                }
+
+                if (!portPattern.test(dcLoadPort)) {
+                    logMessage('warning', 'Invalid Port Number');
+                    return;
+                }
+
+                console.log("Setting up DC Load with IP:", dcLoadIP, "and Port:", dcLoadPort);
+                logMessage('info', `Setting up DC Load with IP: ${dcLoadIP} and Port: ${dcLoadPort}`);
+
+                fetch(`/connectDCLoad?ip=${dcLoadIP}&port=${dcLoadPort}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Failed to connect to DC Load");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            logMessage('info', 'Connected to DC Load successfully.');
+                        } else {
+                            logMessage('error', 'Failed to connect to DC Load.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        logMessage('error', `Error: ${err.message}`);
+                    });
             }
-            
+
             function singleTest(cellIndex, testMode) {
                 if (!readyToRun()) return;
                 logMessage('info', "singel");
@@ -663,13 +692,13 @@
                     card.innerHTML = `
                     <h3>Cell ${relay + 1}</h3>
                     <div class="voltage-row">
-                        <span>Nominal Voltage:</span> <span>${Voltages[relay][0].toFixed(2)} V</span>
+                        <span>Nominal Voltage:</span> <span>${Voltages[relay][0] > 0 ? Voltages[relay][0].toFixed(2) : "N/A"} V</span>
                     </div>
                     <div class="voltage-row">
-                        <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1].toFixed(2)} V</span>
+                        <span>Max Discharge Voltage:</span> <span>${Voltages[relay][1] > 0 ? Voltages[relay][1].toFixed(2) : "N/A"} V</span>
                     </div>
                     <div class="voltage-row">
-                        <span>Max Burst Voltage:</span> <span>${Voltages[relay][2].toFixed(2)} V</span>
+                        <span>Max Burst Voltage:</span> <span>${Voltages[relay][2] > 0 ? Voltages[relay][2].toFixed(2) : "N/A"} V</span>
                     </div>
                     `;
                     grid.appendChild(card);
@@ -715,15 +744,11 @@
                     logMessage('debug', `Sweep Cell Delay: ${sweepCellDelay}`);
                     logMessage('debug', `Cell Capacity: ${cellCapacity}`);                  
                 }
-
             
             function updateVoltages() {
-                Voltages = Voltages.map(volts => volts.map(v => v + (Math.random() - 0.5) * 0.01));
-
+                //Voltages = Voltages.map(volts => volts.map(v => v + (Math.random() - 0.5) * 0.01));
                 renderVoltageCards();
             }
-            
-            
             
             function renderRelays() {
                 const relayGrid = document.getElementById("relayGrid");
@@ -739,7 +764,7 @@
                         return `
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                             <span style="text-align: left;">${labels[index]}:</span>
-                            <span style="text-align: right;">${voltage.toFixed(2)} V</span>
+                            <span style="text-align: right;">${voltage > 0 ? voltage.toFixed(2) : "N/A"} V</span>
                         </div>
                         `;
                     }).join("");
@@ -787,11 +812,41 @@
             });
 
             
-            document.addEventListener("DOMContentLoaded", () => {
-                renderRelays();
-                renderVoltageCards();
-                setInterval(updateVoltages, 1000);   
-            });
+            function fetchVoltages() {
+                fetch('/voltages')
+                  .then(response => response.json())
+                  .then(data => {
+                    Voltages = data;
+                    renderVoltageCards();
+                    renderRelays();
+                  })
+                  .catch(error => {
+                    console.error('Error fetching voltages:', error);
+                  });
+              }
+            
+              function fetchENState() {
+                fetch('/getENState')
+                  .then(response => response.json())
+                  .then(data => {
+                    EN = data.EN;
+                    document.getElementById("enableSlider").checked = EN;
+                    document.querySelectorAll('.activate-relay, .buttonSmall').forEach(btn => {
+                      btn.disabled = !EN;
+                    });
+                    logMessage(EN ? 'warning' : 'debug', EN ? '! Relays Activated !' : 'Relays Deactivated!');
+                  })
+                  .catch(error => {
+                    console.error('Error fetching EN state:', error);
+                  });
+              }
+            
+              document.addEventListener("DOMContentLoaded", () => {
+                fetchENState();
+                fetchVoltages();
+                renderRelays()
+                setInterval(fetchVoltages, 1000);
+              });
             
             function debug() {
                 let activeCell = activeRelay + 1;

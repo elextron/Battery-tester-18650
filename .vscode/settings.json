@@ -1,0 +1,35 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#1e2f2c",
+        "activityBar.background": "#1e2f2c",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#7f5788",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
+        "editorGroup.border": "#1e2f2c",
+        "panel.border": "#1e2f2c",
+        "sash.hoverBorder": "#1e2f2c",
+        "sideBar.border": "#1e2f2c",
+        "statusBar.background": "#0a100f",
+        "statusBar.border": "#0a100f",
+        "statusBar.debuggingBackground": "#100a0b",
+        "statusBar.debuggingBorder": "#100a0b",
+        "statusBar.debuggingForeground": "#e7e7e7",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#1e2f2c",
+        "statusBarItem.remoteBackground": "#0a100f",
+        "statusBarItem.remoteForeground": "#e7e7e7",
+        "titleBar.activeBackground": "#0a100f",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.border": "#0a100f",
+        "titleBar.inactiveBackground": "#0a100f99",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    },
+    "files.associations": {
+        "chrono": "cpp",
+        "optional": "cpp",
+        "regex": "cpp",
+        "system_error": "cpp"
+    }
+}
